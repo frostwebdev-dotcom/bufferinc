@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+build/
+coverage/
+test-results/
+playwright-report/
+.playwright/
+*.tsbuildinfo
+next-env.d.ts.bak
+.env
+.env.local
+.env*.local
+.DS_Store
+Thumbs.db
+.vercel
