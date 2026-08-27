@@ -1,9 +1,19 @@
 /**
- * Fixed atmospheric layers: film grain and a directional vignette.
+ * Fixed atmospheric layers, painted between the canvas and the content.
  *
- * Both are decorative, pointer-transparent, and sit above the canvas but below
- * all content. The grain is an inline SVG turbulence data URI — no network
- * request, no image asset, and it tiles seamlessly at any viewport size.
+ * Stacking order: canvas (z-0) → reading scrim (z-1) → vignette (z-2) →
+ * grain (z-3) → page content (z-10). All are decorative and pointer-
+ * transparent.
+ *
+ * The reading scrim is not decoration — it is the legibility guarantee. The
+ * scene is bright and moving, and text contrast cannot be left to depend on
+ * where a particle happens to be in a given frame. The scrim holds the left
+ * side of the frame down, where the copy column sits, and lets the current run
+ * bright on the right. That is a composition decision as much as a contrast
+ * one: the type reads against calm, the motion has somewhere to be.
+ *
+ * The grain is an inline SVG turbulence data URI — no network request, no
+ * image asset, and it tiles seamlessly at any viewport size.
  */
 
 const GRAIN_SVG = encodeURIComponent(
@@ -19,12 +29,13 @@ const GRAIN_SVG = encodeURIComponent(
 export function Atmosphere() {
   return (
     <>
+      <div aria-hidden="true" className="atmos-scrim" />
+      <div aria-hidden="true" className="atmos-vignette" />
       <div
         aria-hidden="true"
         className="atmos-grain"
         style={{ backgroundImage: `url("data:image/svg+xml,${GRAIN_SVG}")` }}
       />
-      <div aria-hidden="true" className="atmos-vignette" />
     </>
   )
 }

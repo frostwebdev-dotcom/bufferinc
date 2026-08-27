@@ -44,6 +44,7 @@ function gatePoint(t: number, out: THREE.Vector3): THREE.Vector3 {
 
 export function FragmentField({ count }: { count: number }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
+  const materialRef = useRef<THREE.MeshBasicMaterial>(null)
 
   const instances = useMemo<InstanceData[]>(() => {
     const euler = new THREE.Euler()
@@ -121,6 +122,13 @@ export function FragmentField({ count }: { count: number }) {
 
     mesh.instanceMatrix.needsUpdate = true
     mesh.rotation.y += delta * 0.014
+
+    // Presence is scroll-driven. In the hero the slabs are barely there, so the
+    // streams own the frame; they emerge as they rotate into alignment, which
+    // is the moment they actually mean something.
+    if (materialRef.current) {
+      materialRef.current.opacity = 0.05 + progress * 0.4
+    }
   })
 
   useEffect(() => {
@@ -138,15 +146,15 @@ export function FragmentField({ count }: { count: number }) {
       args={[undefined, undefined, count]}
       frustumCulled={false}
       // Fragments sit behind the particle field.
-      position={[0, 0, -4.5]}
+      position={[0, 0, -3]}
     >
       <boxGeometry args={[1, 1, 1]} />
       <meshBasicMaterial
-        color="#6c6860"
+        ref={materialRef}
+        color="#8a857a"
         transparent
-        // Deliberately faint: the slabs are atmosphere behind the type, and
-        // must never compete with a headline for attention.
-        opacity={0.26}
+        // Starting value only; driven per frame from scroll progress above.
+        opacity={0.05}
         blending={THREE.AdditiveBlending}
         depthWrite={false}
       />

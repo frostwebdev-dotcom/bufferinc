@@ -252,6 +252,44 @@ canvas {
    Atmosphere — grain, halation, fog. Purely decorative, pointer-transparent.
    -------------------------------------------------------------------------- */
 
+.atmos-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  /*
+   * Two layers. A left-weighted wash holds the copy column down so text
+   * contrast never depends on where a particle lands this frame, and a flat
+   * veil knocks the whole additive field back a stop.
+   */
+  background:
+    linear-gradient(
+      100deg,
+      rgba(7, 7, 6, 0.94) 0%,
+      rgba(7, 7, 6, 0.86) 22%,
+      rgba(7, 7, 6, 0.6) 42%,
+      rgba(7, 7, 6, 0.22) 64%,
+      rgba(7, 7, 6, 0.06) 82%,
+      transparent 100%
+    ),
+    rgba(7, 7, 6, 0.34);
+}
+
+/* Narrow screens have no spare column, so the wash covers the full width. */
+@media (max-width: 1023px) {
+  .atmos-scrim {
+    background:
+      linear-gradient(
+        100deg,
+        rgba(7, 7, 6, 0.94) 0%,
+        rgba(7, 7, 6, 0.88) 46%,
+        rgba(7, 7, 6, 0.66) 78%,
+        rgba(7, 7, 6, 0.5) 100%
+      ),
+      rgba(7, 7, 6, 0.3);
+  }
+}
+
 .atmos-grain {
   position: fixed;
   inset: 0;
