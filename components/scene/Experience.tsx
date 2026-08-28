@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { useCallback, useState } from 'react'
 import { useExperience } from '@/lib/store'
 import { SparkFallback } from './SparkFallback'
+import { SparkLight } from './SparkLight'
 
 /**
  * The gate between the WebGL experience and its DOM equivalent.
@@ -44,10 +45,15 @@ export function Experience() {
   }
 
   return (
-    <ExperienceCanvas
-      tier={device.tier}
-      coarsePointer={device.coarsePointer}
-      onFailure={handleFailure}
-    />
+    <>
+      <ExperienceCanvas
+        tier={device.tier}
+        coarsePointer={device.coarsePointer}
+        onFailure={handleFailure}
+      />
+      {/* The fireball's light on the text. Mounted only alongside a live
+          canvas, because it tracks a position only the scene produces. */}
+      <SparkLight />
+    </>
   )
 }

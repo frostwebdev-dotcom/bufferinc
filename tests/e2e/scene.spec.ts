@@ -124,6 +124,55 @@ test.describe('WebGL scene', () => {
   })
 })
 
+test.describe('fireball', () => {
+  test('is dark before scroll and lights the page after it', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+    test.skip(await isReducedMotion(page), 'no fireball under reduced motion')
+    const hasWebGL = await page.evaluate(() => {
+      const c = document.createElement('canvas')
+      return !!(c.getContext('webgl2') || c.getContext('webgl'))
+    })
+    test.skip(!hasWebGL, 'browser has no WebGL')
+
+    const light = page.locator('.spark-light')
+    await expect(light).toHaveCount(1)
+
+    const opacityNow = () =>
+      light.evaluate((el) => Number(getComputedStyle(el).opacity))
+
+    // While the mark is assembling there is no fireball, so nothing glows.
+    await page.waitForTimeout(3000)
+    expect(await opacityNow()).toBeLessThan(0.1)
+
+    // Scrolling implodes the mark; the light comes up with it.
+    await page.evaluate(() => window.scrollTo({ top: 1200, behavior: 'instant' as ScrollBehavior }))
+    await expect.poll(opacityNow, { timeout: 8000 }).toBeGreaterThan(0.5)
+
+    // And it tracks the fireball rather than sitting in one place.
+    const firstX = await light.evaluate((el) => el.getBoundingClientRect().x)
+    await page.evaluate(() =>
+      window.scrollTo({ top: document.body.scrollHeight * 0.5, behavior: 'instant' as ScrollBehavior }),
+    )
+    await page.waitForTimeout(1600)
+    const secondX = await light.evaluate((el) => el.getBoundingClientRect().x)
+    expect(Math.abs(secondX - firstX)).toBeGreaterThan(1)
+  })
+
+  test('the light layer can never intercept a click', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    test.skip(await isReducedMotion(page), 'layer is not mounted under reduced motion')
+
+    const layer = page.locator('.spark-light-layer')
+    if ((await layer.count()) === 0) return
+
+    expect(await layer.evaluate((el) => getComputedStyle(el).pointerEvents)).toBe('none')
+    expect(await layer.evaluate((el) => el.getAttribute('aria-hidden'))).toBe('true')
+  })
+})
+
 test.describe('reduced motion', () => {
   test.use({ contextOptions: { reducedMotion: 'reduce' } })
 

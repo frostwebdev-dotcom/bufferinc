@@ -1202,3 +1202,51 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
     animation: none;
   }
 }
+
+/* ==========================================================================
+   Fireball light — the glow the Spark casts on the text it passes
+   ========================================================================== */
+
+@layer components {
+  .spark-light-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 20; /* above main content (z-10), below header (z-110) */
+    pointer-events: none;
+    overflow: hidden;
+    /*
+     * `screen` can only lighten. The type is bone on near-black, so the glow
+     * lifts the ground around a word and leaves the glyphs alone — light
+     * falling on text, with no risk of washing out contrast.
+     */
+    mix-blend-mode: screen;
+    contain: strict;
+  }
+
+  .spark-light {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 46rem;
+    height: 46rem;
+    margin-left: -23rem;
+    margin-top: -23rem;
+    border-radius: 999px;
+    opacity: 0;
+    will-change: transform, opacity;
+    background: radial-gradient(
+      circle closest-side,
+      rgba(255, 226, 168, 0.46) 0%,
+      rgba(242, 189, 104, 0.26) 22%,
+      rgba(194, 118, 44, 0.12) 44%,
+      rgba(120, 62, 18, 0.05) 66%,
+      transparent 100%
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spark-light-layer {
+    display: none !important;
+  }
+}

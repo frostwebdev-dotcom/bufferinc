@@ -55,6 +55,14 @@ export const WORLD = {
    * to the lens to bloom into a large soft disc.
    */
   chaosExtent: new THREE.Vector3(16, 11, 4.5),
+  /**
+   * Where the logo assembles, and how large.
+   *
+   * Held right of centre rather than dead centre: the hero headline is
+   * left-aligned and the reading scrim holds that side down, so the mark reads
+   * cleanly in the open right of the frame instead of fighting the type.
+   */
+  mark: { centre: [4.1, 1.9, 0] as const, scale: 8.4 },
   /** Aperture — the "buffer gate" the fragments resolve into. */
   gate: { width: 9.2, height: 5.6, depth: 0.6, radius: 1.1 },
 } as const

@@ -6,7 +6,8 @@ import * as THREE from 'three'
 import { getScrollSignal } from '@/lib/scroll'
 import { useExperience } from '@/lib/store'
 import { LEAD_AHEAD, SPARK_PROFILES, type SparkState } from '@/lib/spark-machine'
-import { clamp, damp } from '@/lib/utils'
+import { clamp, damp, smoothstep } from '@/lib/utils'
+import { setSparkScreen, setSparkWorld } from '@/lib/spark-position'
 import { createSparkCurve } from '../path'
 
 /**
@@ -33,14 +34,24 @@ import { createSparkCurve } from '../path'
 
 const TRAIL_MIN = 12
 
-export function Spark({ trailPoints, flatten }: { trailPoints: number; flatten: boolean }) {
+export function Spark({
+  trailPoints,
+  flatten,
+  markCentre,
+}: {
+  trailPoints: number
+  flatten: boolean
+  /** Where the logo assembles. The Spark waits here so the mark implodes
+   *  into it rather than into empty space somewhere else in the frame. */
+  markCentre: readonly [number, number, number]
+}) {
   const groupRef = useRef<THREE.Group>(null)
   const coreRef = useRef<THREE.Mesh>(null)
   const haloRef = useRef<THREE.Mesh>(null)
   const ringRef = useRef<THREE.Mesh>(null)
   const orbitRef = useRef<THREE.Group>(null)
 
-  const { camera } = useThree()
+  const { camera, size } = useThree()
   const curve = useMemo(() => createSparkCurve(flatten), [flatten])
 
   /** Mutable per-frame state, kept out of React entirely. */
@@ -188,7 +199,10 @@ export function Spark({ trailPoints, flatten }: { trailPoints: number; flatten: 
     [trailGeometry, trailMaterial],
   )
 
-  const scratch = useMemo(() => ({ target: new THREE.Vector3() }), [])
+  const scratch = useMemo(
+    () => ({ target: new THREE.Vector3(), mark: new THREE.Vector3(), projected: new THREE.Vector3() }),
+    [],
+  )
 
   useFrame((_, rawDelta) => {
     const group = groupRef.current
@@ -218,6 +232,13 @@ export function Spark({ trailPoints, flatten }: { trailPoints: number; flatten: 
 
     curve.getPointAt(clamp(rt.t, 0, 1), scratch.target)
 
+    // Before the first scroll the Spark is not yet a fireball — it waits,
+    // dark, at the centre of the assembling mark. `emerge` ramps as soon as
+    // the visitor scrolls, carrying it out onto its spline.
+    const emerge = smoothstep(clamp(signal.progress / 0.035, 0, 1))
+    scratch.mark.set(markCentre[0], markCentre[1], markCentre[2])
+    scratch.target.lerpVectors(scratch.mark, scratch.target, emerge)
+
     // A slow figure-of-eight sway keeps the Spark alive when the page is still,
     // and widens with scroll speed so fast movement feels energetic.
     const sway = 0.34 + signal.velocity * 0.5
@@ -241,7 +262,9 @@ export function Spark({ trailPoints, flatten }: { trailPoints: number; flatten: 
     const energy = 1 + signal.velocity * 0.45
 
     if (coreRef.current) {
-      const s = rt.core * breath * 0.16
+      // The core blazes only once it is a fireball; during the logo sequence
+      // the particles are the subject and the Spark is barely an ember.
+      const s = rt.core * breath * 0.16 * (0.08 + emerge * 0.92)
       coreRef.current.scale.setScalar(Math.max(s, 0.001))
     }
 
@@ -249,7 +272,7 @@ export function Spark({ trailPoints, flatten }: { trailPoints: number; flatten: 
       haloRef.current.quaternion.copy(camera.quaternion)
       const s = rt.halo * breath * 1.5
       haloRef.current.scale.setScalar(Math.max(s, 0.001))
-      haloUniforms.uIntensity.value = 0.5 * rt.halo * energy
+      haloUniforms.uIntensity.value = 0.5 * rt.halo * energy * (0.05 + emerge * 0.95)
     }
 
     /* --- Buffer dots ---------------------------------------------------- */
@@ -283,6 +306,19 @@ export function Spark({ trailPoints, flatten }: { trailPoints: number; flatten: 
       }
     }
 
+    /* --- Publish position for the DOM light layer ----------------------- */
+
+    setSparkWorld(scratch.target.x, scratch.target.y, scratch.target.z)
+
+    // Project to CSS pixels so a DOM element can sit exactly on the fireball
+    // and light the text it passes over.
+    scratch.projected.copy(scratch.target).project(camera)
+    setSparkScreen(
+      (scratch.projected.x * 0.5 + 0.5) * size.width,
+      (-scratch.projected.y * 0.5 + 0.5) * size.height,
+      scratch.projected.z < 1,
+    )
+
     /* --- Filament trail -------------------------------------------------- */
 
     {
@@ -312,7 +348,7 @@ export function Spark({ trailPoints, flatten }: { trailPoints: number; flatten: 
       }
 
       positions.needsUpdate = true
-      trailUniforms.uStrength.value = rt.trail * energy
+      trailUniforms.uStrength.value = rt.trail * energy * emerge
     }
   })
 
