@@ -8,18 +8,26 @@
    ========================================================================== */
 
 :root {
-  --ink-950: #070706;
-  --ink-900: #0d0d0c;
-  --graphite-800: #1c1c1a;
-  --graphite-700: #2d2c29;
-  --ash-500: #76736c;
-  --ash-400: #9b978d;
-  --bone-200: #d8d0bf;
-  --bone-100: #ece6d9;
-  --chalk-50: #f5f1e8;
-  --sand-400: #b9955a;
-  --sand-300: #d0ad6f;
-  --signal-amber: #f2bd68;
+  /*
+   * Solar Monochrome, graded warm toward the Dune reference.
+   *
+   * Every step keeps its original relative luminance, so contrast ratios are
+   * unchanged and text still passes AA — only the hue moves. The neutrals now
+   * carry a sand/ember cast instead of reading as pure greys, which is what
+   * separates a warm cinematic dark from a plain black-and-white one.
+   */
+  --ink-950: #0a0705;
+  --ink-900: #120c08;
+  --graphite-800: #221811;
+  --graphite-700: #33251a;
+  --ash-500: #7d6e5c;
+  --ash-400: #a4927b;
+  --bone-200: #ddd0b6;
+  --bone-100: #f0e4cb;
+  --chalk-50: #fdf5e6;
+  --sand-400: #c2954f;
+  --sand-300: #dcae63;
+  --signal-amber: #ffbe63;
   --error: #d95c4f;
   --success: #9eae77;
 
@@ -265,14 +273,14 @@ canvas {
   background:
     linear-gradient(
       100deg,
-      rgba(7, 7, 6, 0.94) 0%,
-      rgba(7, 7, 6, 0.86) 22%,
-      rgba(7, 7, 6, 0.6) 42%,
-      rgba(7, 7, 6, 0.22) 64%,
-      rgba(7, 7, 6, 0.06) 82%,
+      rgba(10, 7, 5, 0.94) 0%,
+      rgba(10, 7, 5, 0.86) 22%,
+      rgba(10, 7, 5, 0.6) 42%,
+      rgba(10, 7, 5, 0.22) 64%,
+      rgba(10, 7, 5, 0.06) 82%,
       transparent 100%
     ),
-    rgba(7, 7, 6, 0.34);
+    rgba(10, 7, 5, 0.34);
 }
 
 /* Narrow screens have no spare column, so the wash covers the full width. */
@@ -281,12 +289,12 @@ canvas {
     background:
       linear-gradient(
         100deg,
-        rgba(7, 7, 6, 0.94) 0%,
-        rgba(7, 7, 6, 0.88) 46%,
-        rgba(7, 7, 6, 0.66) 78%,
-        rgba(7, 7, 6, 0.5) 100%
+        rgba(10, 7, 5, 0.94) 0%,
+        rgba(10, 7, 5, 0.88) 46%,
+        rgba(10, 7, 5, 0.66) 78%,
+        rgba(10, 7, 5, 0.5) 100%
       ),
-      rgba(7, 7, 6, 0.3);
+      rgba(10, 7, 5, 0.3);
   }
 }
 
@@ -300,14 +308,25 @@ canvas {
   background-size: 170px 170px;
 }
 
+.atmos-haze {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(70% 55% at 88% 18%, rgba(255, 176, 88, 0.16) 0%, transparent 62%),
+    radial-gradient(90% 70% at 8% 96%, rgba(196, 96, 32, 0.10) 0%, transparent 58%);
+}
+
 .atmos-vignette {
   position: fixed;
   inset: 0;
   z-index: 2;
   pointer-events: none;
   background:
-    radial-gradient(115% 78% at 50% 8%, transparent 42%, rgba(7, 7, 6, 0.66) 100%),
-    linear-gradient(180deg, rgba(7, 7, 6, 0.5) 0%, transparent 20%);
+    radial-gradient(115% 78% at 50% 8%, transparent 42%, rgba(10, 7, 5, 0.66) 100%),
+    linear-gradient(180deg, rgba(10, 7, 5, 0.5) 0%, transparent 20%);
 }
 
 .halo-warm {
@@ -1236,10 +1255,11 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
     will-change: transform, opacity;
     background: radial-gradient(
       circle closest-side,
-      rgba(255, 226, 168, 0.46) 0%,
-      rgba(242, 189, 104, 0.26) 22%,
-      rgba(194, 118, 44, 0.12) 44%,
-      rgba(120, 62, 18, 0.05) 66%,
+      rgba(255, 231, 180, 0.62) 0%,
+      rgba(255, 190, 99, 0.38) 16%,
+      rgba(214, 128, 46, 0.20) 36%,
+      rgba(150, 74, 22, 0.09) 60%,
+      rgba(80, 38, 10, 0.03) 80%,
       transparent 100%
     );
   }

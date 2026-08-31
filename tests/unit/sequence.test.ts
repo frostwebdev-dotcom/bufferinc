@@ -1,108 +1,126 @@
 import { describe, expect, it } from 'vitest'
-import { idleWeights, PHASE, LOOP_START, FIRE_THRESHOLD } from '@/components/scene/sequence'
+import { heroTimeline, PHASE, ARC_LAG } from '@/components/scene/sequence'
 import { sampleLogo, STROKES } from '@/components/scene/logoShape'
 
 /**
- * The hero choreography: scatter → mark → hourglass → mark → hourglass → …
+ * The hero choreography: particles gather into the mark, then the mark travels
+ * out along a figure-eight and back, continuously.
  *
- * These weights drive a GPU blend, so a bug here shows up as particles smeared
- * between two shapes rather than as a crash. Worth pinning down precisely.
+ * These values drive a GPU blend, so a bug here shows up as particles smeared
+ * or snapping rather than as a crash. Worth pinning down precisely — the
+ * continuity assertion in particular encodes the client's core note: the mark
+ * must MOVE into the shape, never cut to it.
  */
 
-const total = (w: { scatter: number; mark: number; hourglass: number }) =>
-  w.scatter + w.mark + w.hourglass
+describe('heroTimeline', () => {
+  it('starts fully scattered', () => {
+    expect(heroTimeline(0).formation).toBe(0)
+    expect(heroTimeline(PHASE.scatterHold).formation).toBe(0)
+  })
 
-describe('idleWeights', () => {
-  it('always returns a partition of unity', () => {
-    // Sampled densely across several loop cycles, including the wrap point.
-    for (let t = 0; t <= 40; t += 0.05) {
-      expect(total(idleWeights(t))).toBeCloseTo(1, 5)
+  it('gathers into the mark, monotonically', () => {
+    let previous = -1
+    for (let t = 0; t <= PHASE.formed; t += 0.05) {
+      const f = heroTimeline(t).formation
+      expect(f).toBeGreaterThanOrEqual(previous)
+      previous = f
+    }
+    expect(heroTimeline(PHASE.formed).formation).toBeCloseTo(1, 5)
+  })
+
+  it('never un-forms once gathered', () => {
+    for (let t = PHASE.formed; t <= 120; t += 0.37) {
+      expect(heroTimeline(t).formation).toBe(1)
     }
   })
 
-  it('never returns a negative weight', () => {
-    for (let t = 0; t <= 40; t += 0.05) {
-      const w = idleWeights(t)
-      expect(w.scatter).toBeGreaterThanOrEqual(0)
-      expect(w.mark).toBeGreaterThanOrEqual(0)
-      expect(w.hourglass).toBeGreaterThanOrEqual(0)
+  it('holds the mark still before the journey begins', () => {
+    for (let t = 0; t <= PHASE.markHold; t += 0.05) {
+      expect(heroTimeline(t).morph).toBe(0)
     }
   })
 
-  it('opens on the scattered cloud', () => {
-    expect(idleWeights(0)).toEqual({ scatter: 1, mark: 0, hourglass: 0 })
-    expect(idleWeights(PHASE.scatterHold).scatter).toBe(1)
+  it('travels out and comes back, repeatedly', () => {
+    // Across one cycle the journey must both reach full travel and return home.
+    const samples: number[] = []
+    for (let t = PHASE.markHold; t <= PHASE.markHold + PHASE.cycle; t += 0.02) {
+      samples.push(heroTimeline(t).morph)
+    }
+    expect(Math.max(...samples)).toBeCloseTo(1, 3)
+    expect(Math.min(...samples)).toBeCloseTo(0, 3)
+    // And it ends the cycle back at the mark, not stranded at the far side.
+    expect(heroTimeline(PHASE.markHold + PHASE.cycle).morph).toBeCloseTo(0, 3)
   })
 
-  it('forms the mark, then holds it', () => {
-    // Mid-transition: partly scattered, partly formed, no hourglass yet.
-    const mid = idleWeights((PHASE.scatterHold + PHASE.formMark) / 2)
-    expect(mid.scatter).toBeGreaterThan(0)
-    expect(mid.mark).toBeGreaterThan(0)
-    expect(mid.hourglass).toBe(0)
-
-    expect(idleWeights(PHASE.formMark).mark).toBeCloseTo(1, 5)
-    expect(idleWeights(PHASE.markHold).mark).toBe(1)
-  })
-
-  it('turns into the hourglass and lets the sand run', () => {
-    const mid = idleWeights((PHASE.markHold + PHASE.toHourglass) / 2)
-    expect(mid.mark).toBeGreaterThan(0)
-    expect(mid.hourglass).toBeGreaterThan(0)
-    expect(mid.scatter).toBe(0)
-
-    expect(idleWeights(PHASE.toHourglass).hourglass).toBeCloseTo(1, 5)
-    expect(idleWeights(PHASE.hourglassHold).hourglass).toBe(1)
-  })
-
-  it('comes back to the mark', () => {
-    expect(idleWeights(PHASE.backToMark).mark).toBeCloseTo(1, 5)
-    expect(idleWeights(PHASE.loopEnd).mark).toBe(1)
-  })
-
-  it('loops between mark and hourglass without replaying the scatter', () => {
-    // The random assembly is specified to happen once, at the start.
-    for (let t = PHASE.loopEnd + 0.01; t <= PHASE.loopEnd * 4; t += 0.05) {
-      expect(idleWeights(t).scatter).toBe(0)
+  it('keeps morph within range forever', () => {
+    for (let t = 0; t <= 240; t += 0.11) {
+      const m = heroTimeline(t).morph
+      expect(m).toBeGreaterThanOrEqual(0)
+      expect(m).toBeLessThanOrEqual(1)
     }
   })
 
-  it('wraps to the loop start rather than to zero', () => {
-    const span = PHASE.loopEnd - LOOP_START
-    // One full cycle on is the same instant in the loop.
-    for (const offset of [0.3, 1.7, 3.2]) {
-      const a = idleWeights(LOOP_START + offset)
-      const b = idleWeights(LOOP_START + offset + span)
-      expect(b.mark).toBeCloseTo(a.mark, 5)
-      expect(b.hourglass).toBeCloseTo(a.hourglass, 5)
+  it('moves continuously — no step change between adjacent frames', () => {
+    // This is the defect being fixed: the mark must travel, never cut. At 60fps
+    // a single frame may not jump more than a small fraction of the journey.
+    const step = 1 / 60
+    let previous = heroTimeline(0).morph
+    for (let t = step; t <= PHASE.markHold + PHASE.cycle * 3; t += step) {
+      const m = heroTimeline(t).morph
+      expect(Math.abs(m - previous)).toBeLessThan(0.02)
+      previous = m
     }
   })
 
-  it('still shows the hourglass many cycles later', () => {
-    const late = idleWeights(PHASE.hourglassHold + (PHASE.loopEnd - LOOP_START) * 6)
-    expect(late.hourglass).toBe(1)
+  it('repeats on the declared cycle', () => {
+    for (const offset of [0.4, 2.9, 6.1, 9.7]) {
+      const a = heroTimeline(PHASE.markHold + offset).morph
+      const b = heroTimeline(PHASE.markHold + offset + PHASE.cycle).morph
+      expect(b).toBeCloseTo(a, 5)
+    }
   })
 
   it('treats negative time as the start rather than producing nonsense', () => {
-    expect(total(idleWeights(-5))).toBeCloseTo(1, 5)
-    expect(idleWeights(-5).scatter).toBe(1)
+    expect(heroTimeline(-5).formation).toBe(0)
+    expect(heroTimeline(-5).morph).toBe(0)
   })
 })
 
-describe('FIRE_THRESHOLD', () => {
-  it('is small enough that any real scroll implodes the mark', () => {
-    expect(FIRE_THRESHOLD).toBeGreaterThan(0)
-    expect(FIRE_THRESHOLD).toBeLessThan(0.02)
+describe('ARC_LAG', () => {
+  it('is large enough to read as travel but not so large the body tears', () => {
+    // 0 would be a rigid shape-swap, which is the snap this replaced.
+    expect(ARC_LAG).toBeGreaterThan(0.2)
+    expect(ARC_LAG).toBeLessThan(0.9)
   })
 })
 
 describe('sampleLogo', () => {
   it('returns exactly the requested number of particles', () => {
     for (const count of [1, 64, 2600, 7000]) {
-      const { positions, accents } = sampleLogo(count)
+      const { positions, accents, arcs } = sampleLogo(count)
       expect(positions.length).toBe(count * 3)
       expect(accents.length).toBe(count)
+      expect(arcs.length).toBe(count)
     }
+  })
+
+  it('reports an arc position in 0..1 for every particle', () => {
+    const { arcs } = sampleLogo(5000)
+    for (let i = 0; i < arcs.length; i += 1) {
+      const a = arcs[i] as number
+      expect(Number.isFinite(a)).toBe(true)
+      expect(a).toBeGreaterThanOrEqual(0)
+      expect(a).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it('spreads arc positions across the whole mark', () => {
+    // Every particle sharing an arc position would collapse the travelling
+    // wave back into a rigid shape-swap.
+    const { arcs } = sampleLogo(5000)
+    const buckets = new Set<number>()
+    for (let i = 0; i < arcs.length; i += 1) buckets.add(Math.floor((arcs[i] as number) * 10))
+    expect(buckets.size).toBeGreaterThanOrEqual(8)
   })
 
   it('produces no NaN or infinite coordinates', () => {

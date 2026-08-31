@@ -82,7 +82,7 @@ export function SceneRoot({ tier, coarsePointer }: { tier: QualityTier; coarsePo
   return (
     <>
       {/* Fog gives the field depth without a postprocessing pass. */}
-      <fog attach="fog" args={['#070706', 16, 58]} />
+      <fog attach="fog" args={['#0a0705', 16, 58]} />
 
       <FragmentField count={settings.fragments} />
       <LogoParticles count={settings.particles} markCentre={markCentre} markScale={markScale} />

@@ -112,8 +112,12 @@ export const intro = {
   skipLabel: 'Skip intro',
   /** Skip becomes available after this delay; the intro never blocks the site. */
   skipAfterMs: 1000,
-  /** Hard ceiling. The loader always exits, including on asset/WebGL failure. */
-  maxDurationMs: 2600,
+  /**
+   * Hard ceiling. The loader always exits, including on asset/WebGL failure.
+   * Kept short because the particle arrival begins the moment it clears, and a
+   * long loader would hide the opening of the effect behind an opaque panel.
+   */
+  maxDurationMs: 1600,
 } as const
 
 /* ==========================================================================

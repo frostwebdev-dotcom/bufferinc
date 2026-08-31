@@ -1,7 +1,7 @@
 /**
  * Fixed atmospheric layers, painted between the canvas and the content.
  *
- * Stacking order: canvas (z-0) → reading scrim (z-1) → vignette (z-2) →
+ * Stacking order: canvas (z-0) → reading scrim + warm haze (z-1) → vignette (z-2) →
  * grain (z-3) → page content (z-10). All are decorative and pointer-
  * transparent.
  *
@@ -30,6 +30,8 @@ export function Atmosphere() {
   return (
     <>
       <div aria-hidden="true" className="atmos-scrim" />
+      {/* Low warm light raking in from one side — the Dune grade. */}
+      <div aria-hidden="true" className="atmos-haze" />
       <div aria-hidden="true" className="atmos-vignette" />
       <div
         aria-hidden="true"

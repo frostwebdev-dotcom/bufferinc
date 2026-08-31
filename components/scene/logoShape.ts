@@ -158,6 +158,14 @@ export type LogoSample = {
   readonly positions: Float32Array
   /** 1 for accent-stroke particles, 0 otherwise. */
   readonly accents: Float32Array
+  /**
+   * 0..1 position along the mark, measured by arc length across all strokes in
+   * drawing order. This is what makes the morph read as one continuous body:
+   * the transition is delayed per particle by its arc position, so the head
+   * leads and the tail follows it round, rather than every particle cutting to
+   * its destination simultaneously.
+   */
+  readonly arcs: Float32Array
 }
 
 /**
@@ -171,6 +179,7 @@ export type LogoSample = {
 export function sampleLogo(count: number, depth = 0.06): LogoSample {
   const positions = new Float32Array(count * 3)
   const accents = new Float32Array(count)
+  const arcs = new Float32Array(count)
 
   const dense = STROKES.map((stroke) => densify(stroke))
 
@@ -186,6 +195,23 @@ export function sampleLogo(count: number, depth = 0.06): LogoSample {
   })
 
   const totalArea = areas.reduce((sum, a) => sum + a, 0) || 1
+
+  // Arc length per stroke, and where each stroke begins in the global 0..1
+  // parameter, so a particle's arc position is continuous across the mark.
+  const lengths = dense.map((points) => {
+    let length = 0
+    for (let i = 1; i < points.length; i += 1) {
+      const a = points[i - 1]
+      const b = points[i]
+      if (a && b) length += Math.hypot(b.x - a.x, b.y - a.y)
+    }
+    return length
+  })
+  const totalLength = lengths.reduce((sum, l) => sum + l, 0) || 1
+  const offsets = lengths.reduce<number[]>((acc, l, i) => {
+    acc.push((acc[i - 1] ?? 0) + (i === 0 ? 0 : (lengths[i - 1] ?? 0)))
+    return acc
+  }, [])
 
   // Bounds across every stroke, so the mark is centred and scaled as a whole.
   let minX = Infinity
@@ -245,6 +271,9 @@ export function sampleLogo(count: number, depth = 0.06): LogoSample {
       positions[o + 2] = (Math.random() * 2 - 1) * depth
 
       accents[written] = stroke.accent ? 1 : 0
+      arcs[written] =
+        ((offsets[strokeIndex] ?? 0) + (at / Math.max(1, points.length - 1)) * (lengths[strokeIndex] ?? 0)) /
+        totalLength
       written += 1
     }
   }
@@ -259,8 +288,9 @@ export function sampleLogo(count: number, depth = 0.06): LogoSample {
     positions[o + 1] = -(p.y + p.ny * across - centreY) / span
     positions[o + 2] = (Math.random() * 2 - 1) * depth
     accents[written] = 0
+    arcs[written] = Math.random()
     written += 1
   }
 
-  return { positions, accents }
+  return { positions, accents, arcs }
 }
