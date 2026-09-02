@@ -1,200 +1,269 @@
 import { describe, expect, it } from 'vitest'
-import { heroTimeline, PHASE, ARC_LAG } from '@/components/scene/sequence'
-import { sampleLogo, STROKES } from '@/components/scene/logoShape'
+import {
+  formationAt,
+  snakeHead,
+  PHASE,
+  SNAKE,
+  SNAKE_CYCLE,
+  ARC_LAG,
+} from '@/components/scene/sequence'
+import { buildSnakePaths, sampleBody } from '@/components/scene/snakePath'
+import { STROKES } from '@/components/scene/logoShape'
 
 /**
- * The hero choreography: particles gather into the mark, then the mark travels
- * out along a figure-eight and back, continuously.
+ * The hero choreography.
  *
- * These values drive a GPU blend, so a bug here shows up as particles smeared
- * or snapping rather than as a crash. Worth pinning down precisely — the
- * continuity assertion in particular encodes the client's core note: the mark
- * must MOVE into the shape, never cut to it.
+ * The body is a fixed shape of fixed length riding a path; only the head's
+ * position changes. These tests pin the two things that make that work — the
+ * body length matching the stretches it has to land on, and the head coming to
+ * rest exactly on those stretches rather than halfway across them.
  */
 
-describe('heroTimeline', () => {
-  it('starts fully scattered', () => {
-    expect(heroTimeline(0).formation).toBe(0)
-    expect(heroTimeline(PHASE.scatterHold).formation).toBe(0)
-  })
+describe('formationAt', () => {
+  it('starts scattered and gathers monotonically', () => {
+    expect(formationAt(0)).toBe(0)
+    expect(formationAt(PHASE.scatterHold)).toBe(0)
 
-  it('gathers into the mark, monotonically', () => {
     let previous = -1
     for (let t = 0; t <= PHASE.formed; t += 0.05) {
-      const f = heroTimeline(t).formation
+      const f = formationAt(t)
       expect(f).toBeGreaterThanOrEqual(previous)
       previous = f
     }
-    expect(heroTimeline(PHASE.formed).formation).toBeCloseTo(1, 5)
+    expect(formationAt(PHASE.formed)).toBeCloseTo(1, 5)
   })
 
   it('never un-forms once gathered', () => {
-    for (let t = PHASE.formed; t <= 120; t += 0.37) {
-      expect(heroTimeline(t).formation).toBe(1)
+    for (let t = PHASE.formed; t <= 200; t += 0.43) {
+      expect(formationAt(t)).toBe(1)
     }
   })
 
-  it('holds the mark still before the journey begins', () => {
-    for (let t = 0; t <= PHASE.markHold; t += 0.05) {
-      expect(heroTimeline(t).morph).toBe(0)
+  it('treats negative time as the start', () => {
+    expect(formationAt(-5)).toBe(0)
+  })
+})
+
+describe('snakeHead', () => {
+  // Representative values; the real ones come from the built path.
+  const MARK = 0.32
+  const SHAPE = 0.78
+
+  it('rests exactly on the mark before setting off', () => {
+    // Landing even slightly off would leave the body draped across a corner
+    // instead of sitting on the logo.
+    for (let t = 0; t <= PHASE.formed + SNAKE.markDwell; t += 0.05) {
+      const s = snakeHead(t, MARK, SHAPE)
+      expect(s.head).toBeCloseTo(MARK, 10)
+      expect(s.speed).toBe(0)
     }
   })
 
-  it('travels out and comes back, repeatedly', () => {
-    // Across one cycle the journey must both reach full travel and return home.
-    const samples: number[] = []
-    for (let t = PHASE.markHold; t <= PHASE.markHold + PHASE.cycle; t += 0.02) {
-      samples.push(heroTimeline(t).morph)
+  it('comes to rest exactly on the figure-eight', () => {
+    const start = PHASE.formed + SNAKE.markDwell + SNAKE.travelOut
+    for (let t = start; t <= start + SNAKE.shapeDwell; t += 0.05) {
+      const s = snakeHead(t, MARK, SHAPE)
+      expect(((s.head % 1) + 1) % 1).toBeCloseTo(SHAPE, 10)
+      // At rest, not bit-exact zero: sampling exactly on the boundary lands in
+      // the travel branch where sin(pi) is 1e-15 rather than 0.
+      expect(s.speed).toBeCloseTo(0, 9)
     }
-    expect(Math.max(...samples)).toBeCloseTo(1, 3)
-    expect(Math.min(...samples)).toBeCloseTo(0, 3)
-    // And it ends the cycle back at the mark, not stranded at the far side.
-    expect(heroTimeline(PHASE.markHold + PHASE.cycle).morph).toBeCloseTo(0, 3)
   })
 
-  it('keeps morph within range forever', () => {
-    for (let t = 0; t <= 240; t += 0.11) {
-      const m = heroTimeline(t).morph
-      expect(m).toBeGreaterThanOrEqual(0)
-      expect(m).toBeLessThanOrEqual(1)
+  it('returns to the mark at the end of the cycle', () => {
+    const s = snakeHead(PHASE.formed + SNAKE_CYCLE, MARK, SHAPE)
+    expect(((s.head % 1) + 1) % 1).toBeCloseTo(MARK, 6)
+  })
+
+  it('only ever travels forward around the loop', () => {
+    // A snake does not reverse into itself.
+    const step = 1 / 60
+    let previous = snakeHead(0, MARK, SHAPE).head
+    for (let t = step; t <= PHASE.formed + SNAKE_CYCLE * 2; t += step) {
+      const head = snakeHead(t, MARK, SHAPE).head
+      // Allow the wrap at the end of a cycle.
+      if (head + 0.5 < previous) previous -= 1
+      expect(head).toBeGreaterThanOrEqual(previous - 1e-9)
+      previous = head
     }
   })
 
   it('moves continuously — no step change between adjacent frames', () => {
-    // This is the defect being fixed: the mark must travel, never cut. At 60fps
-    // a single frame may not jump more than a small fraction of the journey.
     const step = 1 / 60
-    let previous = heroTimeline(0).morph
-    for (let t = step; t <= PHASE.markHold + PHASE.cycle * 3; t += step) {
-      const m = heroTimeline(t).morph
-      expect(Math.abs(m - previous)).toBeLessThan(0.02)
-      previous = m
+    let previous = snakeHead(0, MARK, SHAPE).head
+    for (let t = step; t <= PHASE.formed + SNAKE_CYCLE * 2; t += step) {
+      const head = snakeHead(t, MARK, SHAPE).head
+      const delta = head - previous
+      // Wrapping across the seam is the only permitted jump.
+      if (Math.abs(delta) < 0.5) expect(Math.abs(delta)).toBeLessThan(0.02)
+      previous = head
     }
+  })
+
+  it('reports speed only while travelling', () => {
+    const outMid = PHASE.formed + SNAKE.markDwell + SNAKE.travelOut / 2
+    expect(snakeHead(outMid, MARK, SHAPE).speed).toBeGreaterThan(0.9)
+
+    const backMid =
+      PHASE.formed + SNAKE.markDwell + SNAKE.travelOut + SNAKE.shapeDwell + SNAKE.travelBack / 2
+    expect(snakeHead(backMid, MARK, SHAPE).speed).toBeGreaterThan(0.9)
   })
 
   it('repeats on the declared cycle', () => {
-    for (const offset of [0.4, 2.9, 6.1, 9.7]) {
-      const a = heroTimeline(PHASE.markHold + offset).morph
-      const b = heroTimeline(PHASE.markHold + offset + PHASE.cycle).morph
-      expect(b).toBeCloseTo(a, 5)
+    for (const offset of [0.4, 3.1, 7.8, 11.2]) {
+      const a = snakeHead(PHASE.formed + offset, MARK, SHAPE)
+      const b = snakeHead(PHASE.formed + offset + SNAKE_CYCLE, MARK, SHAPE)
+      expect(((b.head % 1) + 1) % 1).toBeCloseTo(((a.head % 1) + 1) % 1, 6)
+      expect(b.speed).toBeCloseTo(a.speed, 6)
     }
   })
 
-  it('treats negative time as the start rather than producing nonsense', () => {
-    expect(heroTimeline(-5).formation).toBe(0)
-    expect(heroTimeline(-5).morph).toBe(0)
+  it('handles a wrapped path where the shape sits before the mark', () => {
+    // The journey always runs forward, even when shapeHead < markHead.
+    const s = snakeHead(PHASE.formed + SNAKE.markDwell + SNAKE.travelOut, 0.8, 0.2)
+    expect(((s.head % 1) + 1) % 1).toBeCloseTo(0.2, 6)
   })
 })
 
 describe('ARC_LAG', () => {
-  it('is large enough to read as travel but not so large the body tears', () => {
-    // 0 would be a rigid shape-swap, which is the snap this replaced.
+  it('trails the body without tearing it apart', () => {
     expect(ARC_LAG).toBeGreaterThan(0.2)
     expect(ARC_LAG).toBeLessThan(0.9)
   })
 })
 
-describe('sampleLogo', () => {
-  it('returns exactly the requested number of particles', () => {
-    for (const count of [1, 64, 2600, 7000]) {
-      const { positions, accents, arcs } = sampleLogo(count)
-      expect(positions.length).toBe(count * 3)
-      expect(accents.length).toBe(count)
-      expect(arcs.length).toBe(count)
+describe('buildSnakePaths', () => {
+  const paths = buildSnakePaths(256)
+
+  it('builds one loop per stroke of the mark', () => {
+    expect(paths).toHaveLength(STROKES.length)
+  })
+
+  it('produces finite, correctly sized sample buffers', () => {
+    for (const path of paths) {
+      expect(path.samples).toBe(256)
+      expect(path.points.length).toBe(256 * 3)
+      for (let i = 0; i < path.points.length; i += 1) {
+        expect(Number.isFinite(path.points[i] as number)).toBe(true)
+      }
     }
   })
 
-  it('reports an arc position in 0..1 for every particle', () => {
-    const { arcs } = sampleLogo(5000)
-    for (let i = 0; i < arcs.length; i += 1) {
-      const a = arcs[i] as number
-      expect(Number.isFinite(a)).toBe(true)
-      expect(a).toBeGreaterThanOrEqual(0)
-      expect(a).toBeLessThanOrEqual(1)
+  it('makes the body exactly as long as the mark stretch', () => {
+    // The whole mechanism rests on this: the mark occupies the loop from 0 to
+    // `markHead`, and the body is `bodyLength` long. If they differ, the body
+    // can never sit on the mark exactly and the logo would never resolve.
+    for (const path of paths) {
+      expect(path.bodyLength).toBeCloseTo(path.markHead, 6)
     }
   })
 
-  it('spreads arc positions across the whole mark', () => {
-    // Every particle sharing an arc position would collapse the travelling
-    // wave back into a rigid shape-swap.
-    const { arcs } = sampleLogo(5000)
-    const buckets = new Set<number>()
-    for (let i = 0; i < arcs.length; i += 1) buckets.add(Math.floor((arcs[i] as number) * 10))
-    expect(buckets.size).toBeGreaterThanOrEqual(8)
-  })
-
-  it('produces no NaN or infinite coordinates', () => {
-    const { positions } = sampleLogo(4000)
-    for (let i = 0; i < positions.length; i += 1) {
-      expect(Number.isFinite(positions[i] as number)).toBe(true)
+  it('keeps the body a sensible fraction of the loop', () => {
+    for (const path of paths) {
+      expect(path.bodyLength).toBeGreaterThan(0.05)
+      expect(path.bodyLength).toBeLessThan(0.6)
     }
   })
 
-  it('normalises the mark into roughly the unit box', () => {
-    const { positions } = sampleLogo(5000)
-    let maxAbsX = 0
-    let maxAbsY = 0
-    for (let i = 0; i < positions.length; i += 3) {
-      maxAbsX = Math.max(maxAbsX, Math.abs(positions[i] as number))
-      maxAbsY = Math.max(maxAbsY, Math.abs(positions[i + 1] as number))
-    }
-    // Normalised by the larger span, so one axis reaches ~0.5 and neither exceeds it.
-    expect(maxAbsX).toBeLessThanOrEqual(0.51)
-    expect(maxAbsY).toBeLessThanOrEqual(0.51)
-    expect(Math.max(maxAbsX, maxAbsY)).toBeGreaterThan(0.4)
-  })
-
-  it('keeps the mark shallow in depth so it reads as a mark, not a cloud', () => {
-    const { positions } = sampleLogo(3000, 0.06)
-    for (let i = 2; i < positions.length; i += 3) {
-      expect(Math.abs(positions[i] as number)).toBeLessThanOrEqual(0.06)
+  it('places the figure-eight after the mark, with room to travel', () => {
+    for (const path of paths) {
+      expect(path.shapeHead).toBeGreaterThan(path.markHead)
+      expect(path.shapeHead).toBeLessThanOrEqual(1)
+      // The figure-eight stretch is itself a full body length.
+      expect(path.shapeHead - path.bodyLength).toBeGreaterThan(path.markHead)
     }
   })
 
-  it('allocates particles to the accent stroke in proportion to its area', () => {
-    const { accents } = sampleLogo(6000)
-    const accentCount = accents.reduce((sum, a) => sum + a, 0)
-    // The arc is a small part of the mark: present, but never dominant.
-    expect(accentCount).toBeGreaterThan(0)
-    expect(accentCount / accents.length).toBeLessThan(0.2)
+  it('samples the loop evenly by arc length', () => {
+    // Uneven spacing would make the body speed up and slow down as it travels,
+    // and would bunch particles at the corners.
+    for (const path of paths) {
+      const gaps: number[] = []
+      for (let i = 0; i < path.samples; i += 1) {
+        const a = i * 3
+        const b = ((i + 1) % path.samples) * 3
+        gaps.push(
+          Math.hypot(
+            (path.points[b] as number) - (path.points[a] as number),
+            (path.points[b + 1] as number) - (path.points[a + 1] as number),
+            (path.points[b + 2] as number) - (path.points[a + 2] as number),
+          ),
+        )
+      }
+      // Exclude the closing seam, which absorbs the rounding.
+      const inner = gaps.slice(0, -1)
+      expect(Math.max(...inner) / Math.min(...inner)).toBeLessThan(3)
+    }
   })
 
-  it('centres the mark on the origin', () => {
-    const { positions } = sampleLogo(6000)
-    let sumX = 0
-    let sumY = 0
-    const n = positions.length / 3
-    for (let i = 0; i < positions.length; i += 3) {
-      sumX += positions[i] as number
-      sumY += positions[i + 1] as number
+  it('closes the loop', () => {
+    for (const path of paths) {
+      const last = (path.samples - 1) * 3
+      const seam = Math.hypot(
+        (path.points[0] as number) - (path.points[last] as number),
+        (path.points[1] as number) - (path.points[last + 1] as number),
+        (path.points[2] as number) - (path.points[last + 2] as number),
+      )
+      // Within one sample spacing of the start.
+      expect(seam).toBeLessThan(0.15)
     }
-    // Centroid need not be exactly zero — the mark is asymmetric — but it must
-    // sit near the middle or the logo will hang off its anchor point.
-    expect(Math.abs(sumX / n)).toBeLessThan(0.2)
-    expect(Math.abs(sumY / n)).toBeLessThan(0.2)
   })
 })
 
-describe('STROKES', () => {
-  it('gives every control point a matching width', () => {
-    for (const stroke of STROKES) {
-      expect(stroke.widths.length).toBe(stroke.points.length)
-      expect(stroke.points.length).toBeGreaterThanOrEqual(2)
+describe('sampleBody', () => {
+  it('returns one entry per particle across every buffer', () => {
+    for (const count of [1, 64, 2600, 7000]) {
+      const body = sampleBody(count)
+      expect(body.bodyU.length).toBe(count)
+      expect(body.cross.length).toBe(count)
+      expect(body.depth.length).toBe(count)
+      expect(body.path.length).toBe(count)
+      expect(body.accent.length).toBe(count)
+      expect(body.seed.length).toBe(count)
     }
   })
 
-  it('includes the accent stroke that carries the logo colour', () => {
-    expect(STROKES.some((s) => s.accent)).toBe(true)
+  it('keeps every station inside the body', () => {
+    const body = sampleBody(5000)
+    for (let i = 0; i < body.bodyU.length; i += 1) {
+      const u = body.bodyU[i] as number
+      expect(Number.isFinite(u)).toBe(true)
+      expect(u).toBeGreaterThanOrEqual(0)
+      expect(u).toBeLessThanOrEqual(1)
+    }
   })
 
-  it('tapers the spiral at both ends', () => {
-    const spiral = STROKES[0]
-    expect(spiral).toBeDefined()
-    const widths = spiral?.widths ?? []
-    const first = widths[0] as number
-    const last = widths[widths.length - 1] as number
-    const peak = Math.max(...widths)
-    expect(first).toBeLessThan(peak / 2)
-    expect(last).toBeLessThan(peak / 2)
+  it('spreads particles along the whole body', () => {
+    // Bunching would leave gaps in the mark and collapse the travelling wave.
+    const body = sampleBody(5000)
+    const buckets = new Set<number>()
+    for (let i = 0; i < body.bodyU.length; i += 1) {
+      buckets.add(Math.floor((body.bodyU[i] as number) * 10))
+    }
+    expect(buckets.size).toBeGreaterThanOrEqual(8)
+  })
+
+  it('assigns each particle to a real path row', () => {
+    const body = sampleBody(3000)
+    for (let i = 0; i < body.path.length; i += 1) {
+      const row = body.path[i] as number
+      expect(Number.isInteger(row)).toBe(true)
+      expect(row).toBeGreaterThanOrEqual(0)
+      expect(row).toBeLessThan(STROKES.length)
+    }
+  })
+
+  it('keeps the cross-section tight enough to read as a stroke', () => {
+    const body = sampleBody(4000)
+    for (let i = 0; i < body.cross.length; i += 1) {
+      expect(Math.abs(body.cross[i] as number)).toBeLessThan(0.2)
+    }
+  })
+
+  it('gives the accent arc a fair share and no more', () => {
+    const body = sampleBody(6000)
+    const accents = body.accent.reduce((sum, a) => sum + a, 0)
+    expect(accents).toBeGreaterThan(0)
+    expect(accents / body.accent.length).toBeLessThan(0.2)
   })
 })

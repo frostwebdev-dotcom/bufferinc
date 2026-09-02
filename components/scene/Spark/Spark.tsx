@@ -7,7 +7,7 @@ import { getScrollSignal } from '@/lib/scroll'
 import { useExperience } from '@/lib/store'
 import { LEAD_AHEAD, SPARK_PROFILES, type SparkState } from '@/lib/spark-machine'
 import { clamp, damp, smoothstep } from '@/lib/utils'
-import { setSparkScreen, setSparkWorld } from '@/lib/spark-position'
+import { setSparkMotion, setSparkScreen, setSparkWorld } from '@/lib/spark-position'
 import { createSparkCurve } from '../path'
 
 /**
@@ -200,7 +200,13 @@ export function Spark({
   )
 
   const scratch = useMemo(
-    () => ({ target: new THREE.Vector3(), mark: new THREE.Vector3(), projected: new THREE.Vector3() }),
+    () => ({
+      target: new THREE.Vector3(),
+      mark: new THREE.Vector3(),
+      projected: new THREE.Vector3(),
+      previous: new THREE.Vector3(),
+      motion: new THREE.Vector3(),
+    }),
     [],
   )
 
@@ -261,10 +267,15 @@ export function Spark({
     // Velocity adds a touch of brightness so speed reads as energy.
     const energy = 1 + signal.velocity * 0.45
 
+    // Flicker: two detuned sines, so the pulse never settles into an obvious
+    // rhythm the way a single sine does.
+    const flicker =
+      1 + Math.sin(rt.elapsed * 7.3) * 0.045 + Math.sin(rt.elapsed * 11.9 + 1.7) * 0.03
+
     if (coreRef.current) {
-      // The core blazes only once it is a fireball; during the logo sequence
-      // the particles are the subject and the Spark is barely an ember.
-      const s = rt.core * breath * 0.16 * (0.08 + emerge * 0.92)
+      // The core blazes only once it is an orb; during the logo sequence the
+      // particles are the subject and the Spark is barely an ember.
+      const s = rt.core * breath * flicker * 0.16 * (0.08 + emerge * 0.92)
       coreRef.current.scale.setScalar(Math.max(s, 0.001))
     }
 
@@ -272,7 +283,7 @@ export function Spark({
       haloRef.current.quaternion.copy(camera.quaternion)
       const s = rt.halo * breath * 1.5
       haloRef.current.scale.setScalar(Math.max(s, 0.001))
-      haloUniforms.uIntensity.value = 0.5 * rt.halo * energy * (0.05 + emerge * 0.95)
+      haloUniforms.uIntensity.value = 0.5 * rt.halo * energy * flicker * (0.05 + emerge * 0.95)
     }
 
     /* --- Buffer dots ---------------------------------------------------- */
@@ -309,6 +320,19 @@ export function Spark({
     /* --- Publish position for the DOM light layer ----------------------- */
 
     setSparkWorld(scratch.target.x, scratch.target.y, scratch.target.z)
+
+    // Direction and speed of travel, so the orb can stretch along its motion
+    // and the light can flare when it moves quickly.
+    scratch.motion.subVectors(scratch.target, scratch.previous)
+    const travelled = scratch.motion.length()
+    if (travelled > 1e-5) scratch.motion.multiplyScalar(1 / travelled)
+    scratch.previous.copy(scratch.target)
+    setSparkMotion(
+      scratch.motion.x,
+      scratch.motion.y,
+      scratch.motion.z,
+      Math.min(1, travelled / (delta * 14)),
+    )
 
     // Project to CSS pixels so a DOM element can sit exactly on the fireball
     // and light the text it passes over.

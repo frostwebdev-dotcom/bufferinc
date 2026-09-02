@@ -103,13 +103,13 @@ function catmullRom(
   )
 }
 
-type DensePoint = { x: number; y: number; nx: number; ny: number; w: number }
+export type DensePoint = { x: number; y: number; nx: number; ny: number; w: number }
 
 /**
  * Expands a stroke's control points into a dense polyline carrying, at each
  * step, the position, the unit normal, and the local width.
  */
-function densify(stroke: LogoStroke, stepsPerSegment = 26): DensePoint[] {
+export function densify(stroke: LogoStroke, stepsPerSegment = 26): DensePoint[] {
   const pts = stroke.points
   const widths = stroke.widths
   const n = pts.length

@@ -56,7 +56,11 @@ export function SparkLight() {
 
   return (
     <div aria-hidden="true" className="spark-light-layer">
-      <div ref={ref} className="spark-light" />
+      {/* Two falloffs. The wide one is the ambient spill across the section;
+          the tight one is the hot centre that actually lifts nearby words. */}
+      <div ref={ref} className="spark-light">
+        <span className="spark-light__core" />
+      </div>
     </div>
   )
 }

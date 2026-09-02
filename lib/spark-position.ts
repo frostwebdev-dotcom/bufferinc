@@ -21,11 +21,17 @@ export type SparkPosition = {
   /** False when the Spark is behind the camera; the light layer hides. */
   onScreen: boolean
   /**
-   * 0 while the mark is still assembling, 1 once it has fully imploded into
-   * the fireball. The light layer fades with it, so nothing glows before there
-   * is a fireball to glow.
+   * 0 while the mark is still assembling, 1 once it has fully gathered into the
+   * orb. The light layer fades with it, so nothing glows before there is an orb
+   * to glow.
    */
   intensity: number
+  /** Unit direction of travel, so the orb can stretch along its motion. */
+  dirX: number
+  dirY: number
+  dirZ: number
+  /** World-space speed, smoothed. Drives stretch and flare. */
+  speed: number
 }
 
 const position: SparkPosition = {
@@ -36,6 +42,10 @@ const position: SparkPosition = {
   screenY: 0,
   onScreen: false,
   intensity: 0,
+  dirX: 0,
+  dirY: 0,
+  dirZ: 0,
+  speed: 0,
 }
 
 export const getSparkPosition = (): Readonly<SparkPosition> => position
@@ -56,6 +66,13 @@ export function setSparkIntensity(value: number): void {
   position.intensity = value
 }
 
+export function setSparkMotion(x: number, y: number, z: number, speed: number): void {
+  position.dirX = x
+  position.dirY = y
+  position.dirZ = z
+  position.speed = speed
+}
+
 /** Test seam and unmount reset. */
 export function resetSparkPosition(): void {
   position.worldX = 0
@@ -65,4 +82,8 @@ export function resetSparkPosition(): void {
   position.screenY = 0
   position.onScreen = false
   position.intensity = 0
+  position.dirX = 0
+  position.dirY = 0
+  position.dirZ = 0
+  position.speed = 0
 }

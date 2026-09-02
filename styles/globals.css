@@ -1242,6 +1242,24 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
     contain: strict;
   }
 
+  .spark-light__core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 15rem;
+    height: 15rem;
+    margin-left: -7.5rem;
+    margin-top: -7.5rem;
+    border-radius: 999px;
+    background: radial-gradient(
+      circle closest-side,
+      rgba(255, 244, 214, 0.72) 0%,
+      rgba(255, 196, 110, 0.4) 30%,
+      rgba(226, 133, 48, 0.14) 60%,
+      transparent 100%
+    );
+  }
+
   .spark-light {
     position: absolute;
     left: 0;
