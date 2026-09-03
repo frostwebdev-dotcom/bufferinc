@@ -266,33 +266,33 @@ canvas {
   z-index: 1;
   pointer-events: none;
   /*
-   * Two layers. A left-weighted wash holds the copy column down so text
-   * contrast never depends on where a particle lands this frame, and a flat
-   * veil knocks the whole additive field back a stop.
+   * The type is centred and sits directly ON the artwork, so the scrim is
+   * centred too: it holds the middle of the frame down where the words are and
+   * releases toward the edges, letting the outer sweep of the body stay bright.
+   * A flat veil underneath knocks the whole additive field back a stop.
    */
   background:
-    linear-gradient(
-      100deg,
-      rgba(10, 7, 5, 0.94) 0%,
-      rgba(10, 7, 5, 0.86) 22%,
-      rgba(10, 7, 5, 0.6) 42%,
-      rgba(10, 7, 5, 0.22) 64%,
-      rgba(10, 7, 5, 0.06) 82%,
+    radial-gradient(
+      58% 46% at 50% 46%,
+      rgba(10, 7, 5, 0.9) 0%,
+      rgba(10, 7, 5, 0.78) 38%,
+      rgba(10, 7, 5, 0.42) 66%,
+      rgba(10, 7, 5, 0.12) 86%,
       transparent 100%
     ),
-    rgba(10, 7, 5, 0.34);
+    rgba(10, 7, 5, 0.26);
 }
 
-/* Narrow screens have no spare column, so the wash covers the full width. */
+/* Narrow screens have no spare margin, so the wash reaches further out. */
 @media (max-width: 1023px) {
   .atmos-scrim {
     background:
-      linear-gradient(
-        100deg,
-        rgba(10, 7, 5, 0.94) 0%,
-        rgba(10, 7, 5, 0.88) 46%,
-        rgba(10, 7, 5, 0.66) 78%,
-        rgba(10, 7, 5, 0.5) 100%
+      radial-gradient(
+        82% 58% at 50% 46%,
+        rgba(10, 7, 5, 0.92) 0%,
+        rgba(10, 7, 5, 0.84) 46%,
+        rgba(10, 7, 5, 0.58) 78%,
+        rgba(10, 7, 5, 0.36) 100%
       ),
       rgba(10, 7, 5, 0.3);
   }

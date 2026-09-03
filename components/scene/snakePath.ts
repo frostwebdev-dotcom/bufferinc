@@ -284,6 +284,8 @@ export type BodySample = {
   readonly bodyU: Float32Array
   /** Signed offset across the body, in the same normalised units as the path. */
   readonly cross: Float32Array
+  /** Which filament this particle belongs to. Drives the streaked look. */
+  readonly strand: Float32Array
   /** Offset through the body's thickness. */
   readonly depth: Float32Array
   /** Which stroke's loop this particle rides. */
@@ -291,6 +293,16 @@ export type BodySample = {
   readonly accent: Float32Array
   readonly seed: Float32Array
 }
+
+/**
+ * How many filaments the body is combed into.
+ *
+ * This is what separates a stream from a cloud. Scattering particles randomly
+ * across the stroke gives a fuzzy dotted mass; binding them into strands that
+ * each hold their own offset and weave slowly along the body gives continuous
+ * hair-like lines, which is what reads as silk rather than as confetti.
+ */
+export const STRANDS = 34
 
 /**
  * Distributes particles through the body.
@@ -304,6 +316,7 @@ export function sampleBody(count: number, depthScale = 0.05): BodySample {
   const frame = logoFrame()
   const bodyU = new Float32Array(count)
   const cross = new Float32Array(count)
+  const strand = new Float32Array(count)
   const depth = new Float32Array(count)
   const path = new Float32Array(count)
   const accent = new Float32Array(count)
@@ -328,16 +341,61 @@ export function sampleBody(count: number, depthScale = 0.05): BodySample {
     const isLast = strokeIndex === frame.dense.length - 1
     const quota = isLast ? count - written : Math.round(count * ((areas[strokeIndex] ?? 0) / totalArea))
 
-    for (let i = 0; i < quota && written < count; i += 1) {
-      const at = Math.random() * (points.length - 1)
-      const index = Math.floor(at)
-      const frac = at - index
-      const a = points[index] as DensePoint
-      const b = (points[index + 1] ?? a) as DensePoint
-      const width = a.w + (b.w - a.w) * frac
+    // Walk each filament along the body at EVEN spacing.
+    //
+    // Sampling positions randomly is what made this read as scattered dots:
+    // random points clump and leave gaps (a Poisson distribution), so however
+    // many particles you add, the holes stay. Stepping evenly along each strand
+    // puts consecutive particles a fixed, sub-sprite distance apart, and they
+    // overlap into a continuous line.
+    const perStrand = Math.max(1, Math.floor(quota / STRANDS))
 
-      bodyU[written] = at / Math.max(1, points.length - 1)
-      cross[written] = ((Math.random() * 2 - 1) * (width / 2)) / frame.span
+    for (let strandIndex = 0; strandIndex < STRANDS && written < count; strandIndex += 1) {
+      const phase = strandIndex * 2.399
+      // Concentrated toward the centreline rather than spread evenly: raising
+      // the linear position to a power packs most filaments into a bright spine
+      // and lets only a few reach the edges as wisps. An even spread reads as a
+      // flat band; this reads as combed hair.
+      const linear = (strandIndex / (STRANDS - 1)) * 2 - 1
+      const base = Math.sign(linear) * Math.pow(Math.abs(linear), 1.7)
+
+      for (let j = 0; j < perStrand && written < count; j += 1) {
+        // A small per-strand offset staggers the strands against each other so
+        // they do not line up into visible rungs across the body.
+        const u = Math.min(1, (j + 0.5 + (strandIndex / STRANDS) * 0.5) / perStrand)
+        const at = u * (points.length - 1)
+        const index = Math.floor(at)
+        const frac = at - index
+        const a = points[index] as DensePoint
+        const b = (points[index + 1] ?? a) as DensePoint
+        const width = a.w + (b.w - a.w) * frac
+
+        // Where this filament sits across the stroke, and how it weaves along
+        // it. Two detuned waves so neighbouring strands drift apart and cross
+        // rather than running as a flat ribbon of parallel lines.
+        const weave = Math.sin(u * 9 + phase) * 0.16 + Math.sin(u * 3.3 + phase * 1.7) * 0.1
+
+        bodyU[written] = u
+        strand[written] = strandIndex
+        cross[written] =
+          (((base + weave) * 0.92 + (Math.random() * 2 - 1) * 0.05) * (width / 2)) / frame.span
+        depth[written] =
+          Math.sin(u * 5.5 + phase) * depthScale * 0.7 + (Math.random() * 2 - 1) * depthScale * 0.3
+        path[written] = strokeIndex
+        accent[written] = STROKES[strokeIndex]?.accent ? 1 : 0
+        seed[written] = Math.random()
+        written += 1
+      }
+    }
+
+    // Any shortfall from the integer division tops up the densest strand.
+    while (written < count && isLast) {
+      const u = Math.random()
+      const at = u * (points.length - 1)
+      const a = points[Math.floor(at)] as DensePoint
+      bodyU[written] = u
+      strand[written] = written % STRANDS
+      cross[written] = ((Math.random() * 2 - 1) * (a.w / 2)) / frame.span
       depth[written] = (Math.random() * 2 - 1) * depthScale
       path[written] = strokeIndex
       accent[written] = STROKES[strokeIndex]?.accent ? 1 : 0
@@ -346,5 +404,5 @@ export function sampleBody(count: number, depthScale = 0.05): BodySample {
     }
   }
 
-  return { bodyU, cross, depth, path, accent, seed }
+  return { bodyU, cross, strand, depth, path, accent, seed }
 }

@@ -30,8 +30,11 @@ export type QualitySettings = {
 }
 
 export const QUALITY: Record<QualityTier, QualitySettings> = {
-  full: { particles: 7000, fragments: 240, trailPoints: 56, maxDpr: 1.75, antialias: true, bloom: true },
-  balanced: { particles: 2600, fragments: 110, trailPoints: 32, maxDpr: 1.25, antialias: false, bloom: false },
+  // High counts with very small sprites: filaments read as continuous lines
+  // only when the spacing along a strand is below the sprite size. Points are
+  // vertex-cheap and the fill cost stays low because each one is tiny.
+  full: { particles: 18000, fragments: 240, trailPoints: 56, maxDpr: 1.75, antialias: true, bloom: true },
+  balanced: { particles: 6500, fragments: 110, trailPoints: 32, maxDpr: 1.25, antialias: false, bloom: false },
   // Never instantiated as a renderer — present so callers can read one shape.
   fallback: { particles: 0, fragments: 0, trailPoints: 0, maxDpr: 1, antialias: false, bloom: false },
 }

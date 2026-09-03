@@ -66,6 +66,7 @@ const VERTEX = /* glsl */ `
   attribute vec3  aScatter;
   attribute float aBodyU;     // 0 tail, 1 head
   attribute float aCross;
+  attribute float aStrand;
   attribute float aDepth;
   attribute float aPath;      // which row of the path texture
   attribute float aAccent;
@@ -78,6 +79,7 @@ const VERTEX = /* glsl */ `
   varying float vDepthFade;
   varying float vSpeed;
   varying float vHead;
+  varying float vStrand;
 
   #define TAU 6.283185307179586
   #define PI  3.141592653589793
@@ -170,7 +172,7 @@ const VERTEX = /* glsl */ `
     vec3 offset = orbPos - uSparkPos;
     float along = dot(offset, uSparkDir);
     vec3 across = offset - uSparkDir * along;
-    orbPos = uSparkPos + uSparkDir * along * (1.0 + uSparkSpeed * 1.6) + across * (1.0 - uSparkSpeed * 0.3);
+    orbPos = uSparkPos + uSparkDir * along * (1.0 + uSparkSpeed * 0.9) + across * (1.0 - uSparkSpeed * 0.2);
 
     float ember = aRole * step(0.4, uFire);
     orbPos += vec3(
@@ -184,8 +186,10 @@ const VERTEX = /* glsl */ `
     vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
     gl_Position = projectionMatrix * mvPosition;
 
-    float sizeScale = mix(1.0, 0.78, uFire);
-    float size = uSize * (0.5 + aSeed * 0.95) * sizeScale;
+    // Fine and even along a strand, so consecutive particles overlap into a
+    // line instead of reading as separate dots.
+    float sizeScale = mix(1.0, 0.9, uFire);
+    float size = uSize * (0.75 + aSeed * 0.5) * sizeScale;
     gl_PointSize = size * uPixelRatio * (34.0 / max(-mvPosition.z, 0.001));
 
     vSeed = aSeed;
@@ -194,6 +198,7 @@ const VERTEX = /* glsl */ `
     vSpeed = uVelocity;
     // Leading particles run brighter, which gives the body a visible direction.
     vHead = aBodyU;
+    vStrand = aStrand;
     vDepthFade = 1.0 - smoothstep(26.0, 72.0, -mvPosition.z);
   }
 `
@@ -216,14 +221,18 @@ const FRAGMENT = /* glsl */ `
   varying float vDepthFade;
   varying float vSpeed;
   varying float vHead;
+  varying float vStrand;
 
   void main() {
     vec2 offset = gl_PointCoord - vec2(0.5);
     float dist = length(offset);
     if (dist > 0.5) discard;
 
+    // A soft, wide falloff rather than a hard disc. Overlapping soft sprites
+    // additively blend into a continuous filament; hard-edged ones stay
+    // visibly granular no matter how many there are.
     float core = smoothstep(0.5, 0.0, dist);
-    float alpha = pow(core, 1.3);
+    float alpha = pow(core, 2.1);
 
     vec3 markColor = mix(uBoneColor, uChalkColor, smoothstep(0.4, 1.0, vSeed));
     // The head of the body runs hotter while it is travelling, so the direction
@@ -235,7 +244,10 @@ const FRAGMENT = /* glsl */ `
     fireColor = mix(fireColor, uCoreColor, smoothstep(0.72, 1.0, vSeed));
 
     vec3 color = mix(markColor, fireColor, vFire);
-    float brightness = mix(0.95, 0.5 + vSpeed * 0.35, vFire);
+    // Strands alternate slightly in brightness, which is what stops a dense
+    // bundle reading as one flat mass and gives it the grain of combed hair.
+    float strandTone = 0.72 + 0.28 * fract(sin(vStrand * 12.9898) * 43758.5453);
+    float brightness = mix(0.95 * strandTone, 0.5 + vSpeed * 0.35, vFire);
 
     gl_FragColor = vec4(color, alpha * vDepthFade * brightness * uOpacity);
   }
@@ -247,7 +259,7 @@ export function LogoParticles({
   count,
   markCentre,
   markScale,
-  opacity = 0.95,
+  opacity = 0.8,
 }: {
   count: number
   markCentre: readonly [number, number, number]
@@ -307,6 +319,7 @@ export function LogoParticles({
     geom.setAttribute('aScatter', new THREE.BufferAttribute(scatter, 3))
     geom.setAttribute('aBodyU', new THREE.BufferAttribute(body.bodyU as Float32Array, 1))
     geom.setAttribute('aCross', new THREE.BufferAttribute(body.cross as Float32Array, 1))
+    geom.setAttribute('aStrand', new THREE.BufferAttribute(body.strand as Float32Array, 1))
     geom.setAttribute('aDepth', new THREE.BufferAttribute(body.depth as Float32Array, 1))
     geom.setAttribute('aPath', new THREE.BufferAttribute(body.path as Float32Array, 1))
     geom.setAttribute('aAccent', new THREE.BufferAttribute(body.accent as Float32Array, 1))
@@ -335,7 +348,7 @@ export function LogoParticles({
       uSparkSpeed: { value: 0 },
       uMarkCentre: { value: new THREE.Vector3() },
       uMarkScale: { value: 1 },
-      uSize: { value: 3.1 },
+      uSize: { value: 1.9 },
       uPixelRatio: { value: 1 },
       uVelocity: { value: 0 },
       uOpacity: { value: opacity },

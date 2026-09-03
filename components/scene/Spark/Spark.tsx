@@ -50,6 +50,7 @@ export function Spark({
   const haloRef = useRef<THREE.Mesh>(null)
   const ringRef = useRef<THREE.Mesh>(null)
   const orbitRef = useRef<THREE.Group>(null)
+  const orbGlowRef = useRef<THREE.Mesh>(null)
 
   const { camera, size } = useThree()
   const curve = useMemo(() => createSparkCurve(flatten), [flatten])
@@ -156,6 +157,50 @@ export function Spark({
     [haloUniforms],
   )
 
+  /**
+   * The orb's body: a broad, very smooth radial glow.
+   *
+   * Separate from the guiding halo because it does a different job. The halo is
+   * a tight bloom that reads as a spark; this is the soft volume that makes the
+   * thing read as a light source rather than as a bright cluster of particles.
+   * Its falloff is deliberately gentle — a sharp one looks like a sprite, a
+   * gentle one looks like light in air.
+   */
+  const orbUniforms = useMemo(
+    () => ({ uColor: { value: new THREE.Color('#ffd79a') }, uIntensity: { value: 0 } }),
+    [],
+  )
+
+  const orbMaterial = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: orbUniforms,
+        vertexShader: /* glsl */ `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          precision mediump float;
+          uniform vec3 uColor;
+          uniform float uIntensity;
+          varying vec2 vUv;
+          void main() {
+            float d = length(vUv - vec2(0.5)) * 2.0;
+            float body = pow(max(1.0 - d, 0.0), 2.0);
+            float centre = pow(max(1.0 - d, 0.0), 7.0);
+            gl_FragColor = vec4(uColor, (body * 0.5 + centre * 0.85) * uIntensity);
+          }
+        `,
+      }),
+    [orbUniforms],
+  )
+
   const ringMaterial = useMemo(
     () =>
       new THREE.MeshBasicMaterial({
@@ -184,9 +229,10 @@ export function Spark({
       trailGeometry.dispose()
       trailMaterial.dispose()
       haloMaterial.dispose()
+      orbMaterial.dispose()
       ringMaterial.dispose()
     },
-    [trailGeometry, trailMaterial, haloMaterial, ringMaterial],
+    [trailGeometry, trailMaterial, haloMaterial, orbMaterial, ringMaterial],
   )
 
   /**
@@ -286,6 +332,13 @@ export function Spark({
       haloUniforms.uIntensity.value = 0.5 * rt.halo * energy * flicker * (0.05 + emerge * 0.95)
     }
 
+    if (orbGlowRef.current) {
+      orbGlowRef.current.quaternion.copy(camera.quaternion)
+      const swell = 3.6 + signal.velocity * 1.4
+      orbGlowRef.current.scale.setScalar(Math.max(swell * emerge * breath, 0.001))
+      orbUniforms.uIntensity.value = 0.85 * emerge * flicker
+    }
+
     /* --- Buffer dots ---------------------------------------------------- */
 
     if (orbitRef.current) {
@@ -383,6 +436,11 @@ export function Spark({
         <mesh ref={coreRef}>
           <sphereGeometry args={[1, 12, 12]} />
           <meshBasicMaterial color="#ffe4b0" toneMapped={false} />
+        </mesh>
+
+        {/* The orb's soft body — only present once it has gathered */}
+        <mesh ref={orbGlowRef} material={orbMaterial}>
+          <planeGeometry args={[1, 1]} />
         </mesh>
 
         {/* Halo — billboarded toward the camera every frame */}
