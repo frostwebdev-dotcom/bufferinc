@@ -3,13 +3,12 @@ import { clamp, smoothstep } from '@/lib/utils'
 /**
  * Timing for the hero.
  *
- * The logo is a living line, not two poses cross-faded:
- *
  *   formation  particles gather into the mark
- *   stretch    the head leads into the hourglass outline; the tail ripples after
- *   gather     over a few seconds the line pulls back into the full logo
- *
- * Stops are breaths, not cuts. The tail is always a little behind the head.
+ *   hold       the mark is readable, once
+ *   flow       the body shortens into a ribbon and never stops. It travels
+ *              the same looping path — the curves that used to be an 8 and
+ *              an hourglass — but it is too short to occupy those silhouettes.
+ *              The line moves in that form. It does not become the form.
  */
 
 /** Seconds, measured from the moment the loading overlay clears. */
@@ -20,57 +19,30 @@ export const PHASE = {
   formed: 2.9,
 } as const
 
-/** Seconds spent in each leg of one full journey. */
 export const SNAKE = {
-  /** The spiral mark, then the tail leaves. */
-  markDwell: 2.2,
-  /** Tail ripples into the two-loop form they drew. */
-  travelOut: 4.4,
-  /** Hold the figure-eight — that is the form they pointed at as the logo. */
-  shapeDwell: 2.8,
-  /** Stretch into the hourglass. */
-  travelGlass: 2.8,
-  /** Rest as the glass while sand falls through the neck. */
-  glassDwell: 2.8,
-  /** Pull back into the mark, over a few seconds. */
-  travelBack: 5.2,
+  /** Hold the logo long enough to read, then the ribbon leaves. */
+  markDwell: 2.0,
+  /** Seconds to get up to speed and shrink from the mark into a ribbon. */
+  launch: 1.5,
+  /** Seconds for one full circuit of the path, once flowing. */
+  lap: 11,
 } as const
 
-export const SNAKE_CYCLE =
-  SNAKE.markDwell +
-  SNAKE.travelOut +
-  SNAKE.shapeDwell +
-  SNAKE.travelGlass +
-  SNAKE.glassDwell +
-  SNAKE.travelBack
-
-/** Forward arc from `from` to `to` on a unit loop. */
-const fwd = (from: number, to: number) => (to - from + 1) % 1
-
-/**
- * How strongly sand should fall during the hourglass dwell.
- * Fades in, holds, fades out — never a hard cut.
- */
-function sandAt(cycleTime: number): number {
-  const start =
-    SNAKE.markDwell + SNAKE.travelOut + SNAKE.shapeDwell + SNAKE.travelGlass
-  const end = start + SNAKE.glassDwell
-  if (cycleTime < start || cycleTime >= end) return 0
-  const k = (cycleTime - start) / SNAKE.glassDwell
-  if (k < 0.16) return smoothstep(k / 0.16)
-  if (k > 0.84) return smoothstep((1 - k) / 0.16)
-  return 1
-}
+/** One hold plus one lap — used by tests that sample a repeating window. */
+export const SNAKE_CYCLE = SNAKE.markDwell + SNAKE.lap
 
 /** How far the tail lags the head, in seconds. The ripple. */
-export const RIPPLE_LAG_S = 0.55
+export const RIPPLE_LAG_S = 0.48
 
 /** Extra follow-through along the tangent while the head is moving. */
 export const ARC_LAG = 0.78
 
+/** Ribbon length as a fraction of the full mark body. Short enough that it
+ *  cannot complete an 8 or an hourglass — only travel their curves. */
+export const RIBBON_SCALE = 0.32
+
 /**
  * Stretch: the head commits to the curve a little early, then settles.
- * Not a symmetric ease — that reads as a tween.
  */
 export function flowOut(k: number): number {
   const t = clamp(k, 0, 1)
@@ -79,8 +51,7 @@ export function flowOut(k: number): number {
 }
 
 /**
- * Gather: linger on the glass, then pull back. Most of the travel
- * happens in the second half, over a few seconds.
+ * Soft landing ease. Kept for the launch into the ribbon.
  */
 export function gatherIn(k: number): number {
   const t = clamp(k, 0, 1)
@@ -96,72 +67,41 @@ export function formationAt(elapsed: number): number {
 export type HeadState = {
   /** Position along the loop. May exceed 1; consumers wrap it. */
   readonly head: number
-  /** 0 while resting, 1 at full travel. Drives trailing and brightness. */
+  /** 0 while resting on the mark, then always moving. */
   readonly speed: number
-  /** 0..1 how strongly sand falls through the hourglass. */
+  /** Kept at 0 — the ribbon does not pause to drop sand. */
   readonly sand: number
+  /** 0 on the mark, 1 once the body has become a flowing ribbon. */
+  readonly ribbon: number
 }
 
 /**
- * Where the head is, and how fast it is moving.
- *
- * The three head positions come from the built path: they are where the body
- * lands exactly on the mark, the figure-eight, and the hourglass. Everything
- * here is expressed relative to those, so retiming the animation never risks
- * the body stopping halfway onto a shape.
+ * The head rides the path. After the mark it never stops, and it never
+ * lands on a pose. `shapeHead` / `glassHead` are unused — the path still
+ * visits those curves, but the head does not dwell there.
  */
 export function snakeHead(
   elapsed: number,
   markHead: number,
-  shapeHead: number,
-  glassHead: number,
+  _shapeHead?: number,
+  _glassHead?: number,
 ): HeadState {
-  const toShape = fwd(markHead, shapeHead)
-  const toGlass = fwd(shapeHead, glassHead)
-  const toMark = fwd(glassHead, markHead)
-
-  // The body only begins to move once it has formed and been held.
   const t = Math.max(0, elapsed - PHASE.formed)
-  const c = t % SNAKE_CYCLE
-  const sand = sandAt(c)
 
-  const outStart = SNAKE.markDwell
-  const shapeStart = outStart + SNAKE.travelOut
-  const toGlassStart = shapeStart + SNAKE.shapeDwell
-  const glassStart = toGlassStart + SNAKE.travelGlass
-  const backStart = glassStart + SNAKE.glassDwell
-
-  if (c < outStart) {
-    return { head: markHead, speed: 0, sand }
+  if (t < SNAKE.markDwell) {
+    return { head: markHead, speed: 0, sand: 0, ribbon: 0 }
   }
 
-  if (c < shapeStart) {
-    const k = (c - outStart) / SNAKE.travelOut
-    return { head: markHead + toShape * flowOut(k), speed: Math.sin(k * Math.PI), sand }
-  }
+  const moving = t - SNAKE.markDwell
+  const launch = flowOut(clamp(moving / SNAKE.launch, 0, 1))
+  // Slight pulse so the ribbon is not a metronome, but never a stop.
+  const pulse = 0.58 + 0.42 * (0.5 + 0.5 * Math.sin(moving * 0.85))
 
-  if (c < toGlassStart) {
-    return { head: markHead + toShape, speed: 0, sand }
-  }
-
-  if (c < glassStart) {
-    const k = (c - toGlassStart) / SNAKE.travelGlass
-    return {
-      head: markHead + toShape + toGlass * flowOut(k),
-      speed: Math.sin(k * Math.PI),
-      sand,
-    }
-  }
-
-  if (c < backStart) {
-    return { head: markHead + toShape + toGlass, speed: 0, sand }
-  }
-
-  const k = (c - backStart) / SNAKE.travelBack
   return {
-    head: markHead + toShape + toGlass + toMark * gatherIn(k),
-    speed: Math.sin(k * Math.PI),
-    sand,
+    head: markHead + moving / SNAKE.lap,
+    speed: Math.max(0.35, launch * pulse),
+    sand: 0,
+    ribbon: launch,
   }
 }
 

@@ -8,17 +8,22 @@ import { getSparkPosition, setSparkIntensity } from '@/lib/spark-position'
 import { useExperience } from '@/lib/store'
 import { damp } from '@/lib/utils'
 import { buildSnakePaths, sampleBody } from '../snakePath'
-import { ARC_LAG, FIRE_THRESHOLD, RIPPLE_LAG_S, formationAt, snakeHead } from '../sequence'
+import {
+  ARC_LAG,
+  FIRE_THRESHOLD,
+  RIBBON_SCALE,
+  RIPPLE_LAG_S,
+  formationAt,
+  snakeHead,
+} from '../sequence'
 
 /**
  * The hero body.
  *
  *   1. Particles arrive from all across the viewport and gather into the body.
- *   2. The body stretches into the hourglass outline. The head leads; the tail
- *      is still where the head was a moment ago, so the line ripples through
- *      the bend instead of sliding as a stamp. Then, over a few seconds, it
- *      gathers back into the full logo. A share of particles fall through the
- *      hourglass waist while the body rests there.
+ *   2. The body shortens into a ribbon and flows. The path still weaves
+ *      through the old 8 / hourglass curves, but the ribbon is too short to
+ *      become either shape. The head leads; the tail ripples after it.
  *   3. On scroll the body gathers into a glowing orb that rides the scroll.
  *
  * ---------------------------------------------------------------------------
@@ -491,24 +496,24 @@ export function LogoParticles({
 
     const head = uniforms.uHead.value
     const headLag = uniforms.uHeadLag.value
+    const bodyLen = uniforms.uBodyLen.value
     let speed = 0
 
     paths.forEach((path, row) => {
-      const state = snakeHead(rt.elapsed, path.markHead, path.shapeHead, path.glassHead)
-      const behind = snakeHead(
-        Math.max(0, rt.elapsed - RIPPLE_LAG_S),
-        path.markHead,
-        path.shapeHead,
-        path.glassHead,
-      )
+      const state = snakeHead(rt.elapsed, path.markHead)
+      const behind = snakeHead(Math.max(0, rt.elapsed - RIPPLE_LAG_S), path.markHead)
+      const full = path.bodyLength
+      const len = full * (1 - state.ribbon * (1 - RIBBON_SCALE))
       if (row === 0) {
         head.x = state.head
         headLag.x = behind.head
+        bodyLen.x = len
         speed = state.speed
-        uniforms.uSand.value = state.sand
+        uniforms.uSand.value = 0
       } else {
         head.y = state.head
         headLag.y = behind.head
+        bodyLen.y = len
       }
     })
 
