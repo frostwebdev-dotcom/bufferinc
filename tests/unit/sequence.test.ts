@@ -46,41 +46,67 @@ describe('formationAt', () => {
 
 describe('snakeHead', () => {
   // Representative values; the real ones come from the built path.
-  const MARK = 0.32
-  const SHAPE = 0.78
+  const MARK = 0.22
+  const SHAPE = 0.52
+  const GLASS = 0.78
+  const at = (t: number) => snakeHead(t, MARK, SHAPE, GLASS)
+
+  const glassStart =
+    PHASE.formed + SNAKE.markDwell + SNAKE.travelOut + SNAKE.shapeDwell + SNAKE.travelGlass
 
   it('rests exactly on the mark before setting off', () => {
     // Landing even slightly off would leave the body draped across a corner
     // instead of sitting on the logo.
     for (let t = 0; t <= PHASE.formed + SNAKE.markDwell; t += 0.05) {
-      const s = snakeHead(t, MARK, SHAPE)
+      const s = at(t)
       expect(s.head).toBeCloseTo(MARK, 10)
       expect(s.speed).toBe(0)
+      expect(s.sand).toBe(0)
     }
   })
 
   it('comes to rest exactly on the figure-eight', () => {
     const start = PHASE.formed + SNAKE.markDwell + SNAKE.travelOut
     for (let t = start; t <= start + SNAKE.shapeDwell; t += 0.05) {
-      const s = snakeHead(t, MARK, SHAPE)
+      const s = at(t)
       expect(((s.head % 1) + 1) % 1).toBeCloseTo(SHAPE, 10)
       // At rest, not bit-exact zero: sampling exactly on the boundary lands in
       // the travel branch where sin(pi) is 1e-15 rather than 0.
       expect(s.speed).toBeCloseTo(0, 9)
+      expect(s.sand).toBe(0)
     }
   })
 
+  it('comes to rest exactly on the hourglass', () => {
+    for (let t = glassStart; t <= glassStart + SNAKE.glassDwell; t += 0.05) {
+      const s = at(t)
+      expect(((s.head % 1) + 1) % 1).toBeCloseTo(GLASS, 10)
+      expect(s.speed).toBeCloseTo(0, 9)
+    }
+  })
+
+  it('drops sand only while dwelling as the hourglass', () => {
+    expect(at(PHASE.formed + SNAKE.markDwell / 2).sand).toBe(0)
+    expect(at(PHASE.formed + SNAKE.markDwell + SNAKE.travelOut / 2).sand).toBe(0)
+
+    const midGlass = glassStart + SNAKE.glassDwell / 2
+    expect(at(midGlass).sand).toBeCloseTo(1, 5)
+
+    const afterGlass = glassStart + SNAKE.glassDwell + SNAKE.travelBack / 2
+    expect(at(afterGlass).sand).toBe(0)
+  })
+
   it('returns to the mark at the end of the cycle', () => {
-    const s = snakeHead(PHASE.formed + SNAKE_CYCLE, MARK, SHAPE)
+    const s = at(PHASE.formed + SNAKE_CYCLE)
     expect(((s.head % 1) + 1) % 1).toBeCloseTo(MARK, 6)
   })
 
   it('only ever travels forward around the loop', () => {
     // A snake does not reverse into itself.
     const step = 1 / 60
-    let previous = snakeHead(0, MARK, SHAPE).head
+    let previous = at(0).head
     for (let t = step; t <= PHASE.formed + SNAKE_CYCLE * 2; t += step) {
-      const head = snakeHead(t, MARK, SHAPE).head
+      const head = at(t).head
       // Allow the wrap at the end of a cycle.
       if (head + 0.5 < previous) previous -= 1
       expect(head).toBeGreaterThanOrEqual(previous - 1e-9)
@@ -90,9 +116,9 @@ describe('snakeHead', () => {
 
   it('moves continuously — no step change between adjacent frames', () => {
     const step = 1 / 60
-    let previous = snakeHead(0, MARK, SHAPE).head
+    let previous = at(0).head
     for (let t = step; t <= PHASE.formed + SNAKE_CYCLE * 2; t += step) {
-      const head = snakeHead(t, MARK, SHAPE).head
+      const head = at(t).head
       const delta = head - previous
       // Wrapping across the seam is the only permitted jump.
       if (Math.abs(delta) < 0.5) expect(Math.abs(delta)).toBeLessThan(0.02)
@@ -102,26 +128,34 @@ describe('snakeHead', () => {
 
   it('reports speed only while travelling', () => {
     const outMid = PHASE.formed + SNAKE.markDwell + SNAKE.travelOut / 2
-    expect(snakeHead(outMid, MARK, SHAPE).speed).toBeGreaterThan(0.9)
+    expect(at(outMid).speed).toBeGreaterThan(0.9)
 
-    const backMid =
-      PHASE.formed + SNAKE.markDwell + SNAKE.travelOut + SNAKE.shapeDwell + SNAKE.travelBack / 2
-    expect(snakeHead(backMid, MARK, SHAPE).speed).toBeGreaterThan(0.9)
+    const glassMid =
+      PHASE.formed +
+      SNAKE.markDwell +
+      SNAKE.travelOut +
+      SNAKE.shapeDwell +
+      SNAKE.travelGlass / 2
+    expect(at(glassMid).speed).toBeGreaterThan(0.9)
+
+    const backMid = glassStart + SNAKE.glassDwell + SNAKE.travelBack / 2
+    expect(at(backMid).speed).toBeGreaterThan(0.9)
   })
 
   it('repeats on the declared cycle', () => {
     for (const offset of [0.4, 3.1, 7.8, 11.2]) {
-      const a = snakeHead(PHASE.formed + offset, MARK, SHAPE)
-      const b = snakeHead(PHASE.formed + offset + SNAKE_CYCLE, MARK, SHAPE)
+      const a = at(PHASE.formed + offset)
+      const b = at(PHASE.formed + offset + SNAKE_CYCLE)
       expect(((b.head % 1) + 1) % 1).toBeCloseTo(((a.head % 1) + 1) % 1, 6)
       expect(b.speed).toBeCloseTo(a.speed, 6)
+      expect(b.sand).toBeCloseTo(a.sand, 6)
     }
   })
 
-  it('handles a wrapped path where the shape sits before the mark', () => {
-    // The journey always runs forward, even when shapeHead < markHead.
-    const s = snakeHead(PHASE.formed + SNAKE.markDwell + SNAKE.travelOut, 0.8, 0.2)
-    expect(((s.head % 1) + 1) % 1).toBeCloseTo(0.2, 6)
+  it('handles a wrapped path where a later pose sits before the mark', () => {
+    // The journey always runs forward, even when a destination wraps past 1.
+    const s = snakeHead(PHASE.formed + SNAKE.markDwell + SNAKE.travelOut, 0.8, 0.15, 0.45)
+    expect(((s.head % 1) + 1) % 1).toBeCloseTo(0.15, 6)
   })
 })
 
@@ -171,6 +205,16 @@ describe('buildSnakePaths', () => {
       expect(path.shapeHead).toBeLessThanOrEqual(1)
       // The figure-eight stretch is itself a full body length.
       expect(path.shapeHead - path.bodyLength).toBeGreaterThan(path.markHead)
+    }
+  })
+
+  it('places the hourglass after the figure-eight, with room to travel', () => {
+    for (const path of paths) {
+      expect(path.glassHead).toBeGreaterThan(path.shapeHead)
+      expect(path.glassHead).toBeLessThanOrEqual(1)
+      // The blend between the two poses has to be long enough that the body
+      // is not still on the figure-eight when the head arrives on the glass.
+      expect(path.glassHead - path.shapeHead).toBeGreaterThan(0.08)
     }
   })
 

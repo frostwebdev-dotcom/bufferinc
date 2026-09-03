@@ -16,7 +16,9 @@ import { ARC_LAG, FIRE_THRESHOLD, formationAt, snakeHead } from '../sequence'
  *   1. Particles arrive from all across the viewport and gather into the body.
  *   2. The body — fixed length, fixed shape — TRAVELS along a closed path. Where
  *      the path traces the mark, the body is the mark. Where it traces the
- *      figure-eight, the body is the figure-eight. In between it is draped
+ *      figure-eight, the body is the figure-eight. Where it traces the
+ *      hourglass, the body is the hourglass, and a share of particles leave
+ *      the outline to fall through the waist like sand. In between it is draped
  *      across the corner: head already round the bend, tail still on the old
  *      stretch, every part turning as it reaches the same point in space.
  *   3. On scroll the body gathers into a glowing orb that rides the scroll.
@@ -62,6 +64,7 @@ const VERTEX = /* glsl */ `
   uniform float uSize;
   uniform float uPixelRatio;
   uniform float uVelocity;
+  uniform float uSand;        // 0..1 hourglass sand fall
 
   attribute vec3  aScatter;
   attribute float aBodyU;     // 0 tail, 1 head
@@ -143,6 +146,27 @@ const VERTEX = /* glsl */ `
 
     bodyPos = uMarkCentre + bodyPos * uMarkScale;
 
+    /* --- Sand falling through the hourglass ---------------------------- */
+    // A share of the main stroke leaves the glass outline and drops through
+    // the waist — linger at the top, fall fast through the neck, settle below.
+    // The accent stroke stays on the vessel so the silhouette still reads.
+    float isSand = step(0.66, aSeed) * step(row, 0.5);
+    float fall = fract(uTime * 0.42 + aSeed * 3.1);
+    float drop = fall < 0.26
+      ? (fall / 0.26) * 0.16
+      : fall < 0.52
+        ? 0.16 + ((fall - 0.26) / 0.26) * 0.68
+        : 0.84 + ((fall - 0.52) / 0.48) * 0.16;
+    float spread = aSeed * 2.0 - 1.0;
+    float neck = smoothstep(0.18, 0.42, drop) * (1.0 - smoothstep(0.58, 0.80, drop));
+    vec3 sandPos = uMarkCentre + vec3(
+      spread * mix(0.24, 0.03, neck),
+      0.54 - drop * 1.08,
+      (fract(aSeed * 17.0) - 0.5) * 0.05
+    ) * uMarkScale;
+    float sandMix = uSand * isSand;
+    bodyPos = mix(bodyPos, sandPos, sandMix);
+
     /* --- Arrival from across the viewport ------------------------------ */
     float f = ease(clamp(uFormation * 1.45 - aBodyU * 0.45, 0.0, 1.0));
     vec3 pos = mix(aScatter, bodyPos, f);
@@ -219,7 +243,7 @@ const VERTEX = /* glsl */ `
 
     // Fine and even along a strand, so consecutive particles overlap into a
     // line instead of reading as separate dots.
-    float sizeScale = mix(1.0, 0.9, uFire);
+    float sizeScale = mix(1.0, 0.9, uFire) * mix(1.0, 0.68, sandMix);
     float size = uSize * (0.75 + aSeed * 0.5) * sizeScale;
     gl_PointSize = size * uPixelRatio * (34.0 / max(-mvPosition.z, 0.001));
 
@@ -382,6 +406,7 @@ export function LogoParticles({
       uSize: { value: 1.9 },
       uPixelRatio: { value: 1 },
       uVelocity: { value: 0 },
+      uSand: { value: 0 },
       uOpacity: { value: opacity },
       // Infrared: silver body, blown-white highlights, no warmth anywhere.
       uBoneColor: { value: new THREE.Color('#aab4c2') },
@@ -437,11 +462,12 @@ export function LogoParticles({
     let speed = 0
 
     paths.forEach((path, row) => {
-      const state = snakeHead(rt.elapsed, path.markHead, path.shapeHead)
+      const state = snakeHead(rt.elapsed, path.markHead, path.shapeHead, path.glassHead)
       const wrapped = ((state.head % 1) + 1) % 1
       if (row === 0) {
         head.x = wrapped
         speed = state.speed
+        uniforms.uSand.value = state.sand
       } else {
         head.y = wrapped
       }

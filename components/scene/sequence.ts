@@ -10,8 +10,9 @@ import { clamp, smoothstep } from '@/lib/utils'
  *
  *   head       the position of the snake's head along its loop. The body of
  *              fixed length trails behind it. The head DWELLS where the body
- *              covers the mark, travels round to where the body covers the
- *              figure-eight, dwells again, and continues back to the mark.
+ *              covers the mark, travels to the figure-eight, dwells, travels
+ *              on to the hourglass (where sand falls through the waist),
+ *              dwells, and continues back to the mark.
  *
  * The body is never reshaped. Only the head's position on the path changes, and
  * the body follows it — which is why the motion reads as one thing turning a
@@ -29,17 +30,44 @@ export const PHASE = {
 /** Seconds spent in each leg of one full journey. */
 export const SNAKE = {
   /** Resting as the logo, so it is unmistakably read as the mark. */
-  markDwell: 3.4,
+  markDwell: 3.0,
   /** Travelling from the mark round to the figure-eight. */
-  travelOut: 4.6,
-  /** Resting as the figure-eight. Shorter — it is a place the body passes. */
-  shapeDwell: 1.5,
+  travelOut: 3.8,
+  /** Resting as the figure-eight. */
+  shapeDwell: 1.4,
+  /** Travelling from the figure-eight on to the hourglass. */
+  travelGlass: 3.2,
+  /** Resting as the hourglass while sand falls through the waist. */
+  glassDwell: 2.6,
   /** Travelling the rest of the loop, back to the mark. */
-  travelBack: 4.6,
+  travelBack: 3.8,
 } as const
 
 export const SNAKE_CYCLE =
-  SNAKE.markDwell + SNAKE.travelOut + SNAKE.shapeDwell + SNAKE.travelBack
+  SNAKE.markDwell +
+  SNAKE.travelOut +
+  SNAKE.shapeDwell +
+  SNAKE.travelGlass +
+  SNAKE.glassDwell +
+  SNAKE.travelBack
+
+/** Forward arc from `from` to `to` on a unit loop. */
+const fwd = (from: number, to: number) => (to - from + 1) % 1
+
+/**
+ * How strongly sand should fall during the hourglass dwell.
+ * Fades in, holds, fades out — never a hard cut.
+ */
+function sandAt(cycleTime: number): number {
+  const start =
+    SNAKE.markDwell + SNAKE.travelOut + SNAKE.shapeDwell + SNAKE.travelGlass
+  const end = start + SNAKE.glassDwell
+  if (cycleTime < start || cycleTime >= end) return 0
+  const k = (cycleTime - start) / SNAKE.glassDwell
+  if (k < 0.16) return smoothstep(k / 0.16)
+  if (k > 0.84) return smoothstep((1 - k) / 0.16)
+  return 1
+}
 
 /** Particles trail a little as the body accelerates. */
 export const ARC_LAG = 0.55
@@ -54,44 +82,71 @@ export type HeadState = {
   readonly head: number
   /** 0 while resting, 1 at full travel. Drives trailing and brightness. */
   readonly speed: number
+  /** 0..1 how strongly sand falls through the hourglass. */
+  readonly sand: number
 }
 
 /**
  * Where the head is, and how fast it is moving.
  *
- * `markHead` and `shapeHead` come from the built path: they are the two head
- * positions at which the body lands exactly on the mark and exactly on the
- * figure-eight. Everything here is expressed relative to those, so retiming the
- * animation never risks the body stopping halfway onto a shape.
+ * The three head positions come from the built path: they are where the body
+ * lands exactly on the mark, the figure-eight, and the hourglass. Everything
+ * here is expressed relative to those, so retiming the animation never risks
+ * the body stopping halfway onto a shape.
  */
-export function snakeHead(elapsed: number, markHead: number, shapeHead: number): HeadState {
-  // The journey always runs forward around the loop.
-  const toShape = (shapeHead - markHead + 1) % 1
-  const toMark = 1 - toShape
+export function snakeHead(
+  elapsed: number,
+  markHead: number,
+  shapeHead: number,
+  glassHead: number,
+): HeadState {
+  const toShape = fwd(markHead, shapeHead)
+  const toGlass = fwd(shapeHead, glassHead)
+  const toMark = fwd(glassHead, markHead)
 
   // The body only begins to move once it has formed and been held.
   const t = Math.max(0, elapsed - PHASE.formed)
   const c = t % SNAKE_CYCLE
+  const sand = sandAt(c)
 
   const outStart = SNAKE.markDwell
   const shapeStart = outStart + SNAKE.travelOut
-  const backStart = shapeStart + SNAKE.shapeDwell
+  const toGlassStart = shapeStart + SNAKE.shapeDwell
+  const glassStart = toGlassStart + SNAKE.travelGlass
+  const backStart = glassStart + SNAKE.glassDwell
 
   if (c < outStart) {
-    return { head: markHead, speed: 0 }
+    return { head: markHead, speed: 0, sand }
   }
 
   if (c < shapeStart) {
     const k = (c - outStart) / SNAKE.travelOut
-    return { head: markHead + toShape * smoothstep(k), speed: Math.sin(k * Math.PI) }
+    return { head: markHead + toShape * smoothstep(k), speed: Math.sin(k * Math.PI), sand }
+  }
+
+  if (c < toGlassStart) {
+    return { head: markHead + toShape, speed: 0, sand }
+  }
+
+  if (c < glassStart) {
+    const k = (c - toGlassStart) / SNAKE.travelGlass
+    return {
+      head: markHead + toShape + toGlass * smoothstep(k),
+      speed: Math.sin(k * Math.PI),
+      sand,
+    }
   }
 
   if (c < backStart) {
-    return { head: markHead + toShape, speed: 0 }
+    return { head: markHead + toShape + toGlass, speed: 0, sand }
   }
 
   const k = (c - backStart) / SNAKE.travelBack
-  return { head: markHead + toShape + toMark * smoothstep(k), speed: Math.sin(k * Math.PI) }
+  return {
+    head: markHead + toShape + toGlass + toMark * smoothstep(k),
+    speed: Math.sin(k * Math.PI),
+    sand,
+  }
 }
 
 /**
