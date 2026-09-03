@@ -35,7 +35,7 @@ export function UseCases() {
             <li key={item.id} data-reveal data-reveal-index={index + 1}>
               <article className="card flex h-full flex-col p-7 sm:p-8">
                 <div className="flex items-baseline justify-between gap-4">
-                  <span aria-hidden="true" className="t-mono tabular-nums text-[color:var(--sand-400)]">
+                  <span aria-hidden="true" className="t-mono tabular-nums text-[color:var(--steel-400)]">
                     {item.index}
                   </span>
                   <span className="t-label">{`0${index + 1} / 03`}</span>
@@ -58,7 +58,7 @@ export function UseCases() {
                         aria-hidden="true"
                         className={
                           stage === 'outcome'
-                            ? 'absolute left-0 top-[9px] h-2 w-2 rounded-full bg-[color:var(--signal-amber)]'
+                            ? 'absolute left-0 top-[9px] h-2 w-2 rounded-full bg-[color:var(--signal)]'
                             : 'absolute left-[1px] top-[10px] h-1.5 w-1.5 rounded-full bg-[color:var(--ash-500)]'
                         }
                       />
@@ -80,11 +80,11 @@ export function UseCases() {
                 {item.disclaimer ? (
                   <p
                     role="note"
-                    className="mt-7 flex gap-3 rounded-md border border-[color:var(--sand-400)]/30 bg-[color:var(--sand-400)]/[0.05] p-4 text-[0.8rem] leading-relaxed text-bone-200"
+                    className="mt-7 flex gap-3 rounded-md border border-[color:var(--steel-400)]/30 bg-[color:var(--steel-400)]/[0.05] p-4 text-[0.8rem] leading-relaxed text-bone-200"
                   >
                     <AlertTriangle
                       aria-hidden="true"
-                      className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--sand-300)]"
+                      className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--steel-300)]"
                     />
                     <span>{item.disclaimer}</span>
                   </p>

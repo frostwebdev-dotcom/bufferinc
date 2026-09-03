@@ -172,7 +172,7 @@ export function ContactForm() {
         {!delivered ? (
           <p
             data-placeholder="true"
-            className="t-mono rounded-md border border-dashed border-[color:var(--sand-400)]/50 bg-[color:var(--sand-400)]/[0.05] p-3.5 leading-relaxed text-[color:var(--sand-300)]"
+            className="t-mono rounded-md border border-dashed border-[color:var(--steel-400)]/50 bg-[color:var(--steel-400)]/[0.05] p-3.5 leading-relaxed text-[color:var(--steel-300)]"
           >
             {contact.dryRunNotice}
           </p>

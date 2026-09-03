@@ -36,7 +36,7 @@ export function BrandTransition() {
             </p>
 
             <p
-              className="t-mono mt-8 text-[color:var(--sand-300)]"
+              className="t-mono mt-8 text-[color:var(--steel-300)]"
               data-reveal
               data-reveal-index="3"
             >
@@ -61,13 +61,13 @@ export function BrandTransition() {
                     <path d="M2 6h52" stroke="var(--graphite-700)" strokeWidth="1" strokeLinecap="round" />
                     <path
                       d="M2 6h52"
-                      stroke="var(--sand-400)"
+                      stroke="var(--steel-400)"
                       strokeWidth="1"
                       strokeLinecap="round"
                       className="transition-row__beam"
                     />
-                    <circle cx="28" cy="6" r="4" fill="var(--signal-amber)" opacity="0.16" />
-                    <circle cx="28" cy="6" r="1.6" fill="var(--signal-amber)" />
+                    <circle cx="28" cy="6" r="4" fill="var(--signal)" opacity="0.16" />
+                    <circle cx="28" cy="6" r="1.6" fill="var(--signal)" />
                   </svg>
                   <span className="sr-only">becomes</span>
                 </span>

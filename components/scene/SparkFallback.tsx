@@ -58,14 +58,14 @@ function ReducedMarker() {
       style={{ transition: 'opacity 400ms linear' }}
     >
       <span
-        className="absolute h-2.5 w-2.5 rounded-full bg-[color:var(--signal-amber)]"
+        className="absolute h-2.5 w-2.5 rounded-full bg-[color:var(--signal)]"
         style={{
           left: `${x}%`,
           top: `${y}%`,
           // Position changes are instant; only opacity animates. This is the
           // whole point of the reduced-motion rendering.
           transition: 'opacity 300ms linear',
-          boxShadow: '0 0 0 6px color-mix(in oklab, var(--signal-amber) 14%, transparent)',
+          boxShadow: '0 0 0 6px color-mix(in oklab, var(--signal) 14%, transparent)',
         }}
       />
     </div>
@@ -152,7 +152,7 @@ function MotionSpark() {
           ref={(el) => {
             trailRefs.current[i] = el
           }}
-          className="absolute left-0 top-0 rounded-full bg-[color:var(--signal-amber)]"
+          className="absolute left-0 top-0 rounded-full bg-[color:var(--signal)]"
           style={{ width: `${Math.max(2, 5 - i * 0.4)}px`, height: `${Math.max(2, 5 - i * 0.4)}px`, opacity: 0 }}
         />
       ))}

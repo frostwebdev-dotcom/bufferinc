@@ -29,7 +29,7 @@ export function PlaceholderMark({
       className={cn(
         'inline',
         isDev &&
-          'rounded-[3px] border border-dashed border-[color:var(--sand-400)]/60 bg-[color:var(--sand-400)]/[0.06] px-1',
+          'rounded-[3px] border border-dashed border-[color:var(--steel-400)]/60 bg-[color:var(--steel-400)]/[0.06] px-1',
         className,
       )}
     >
@@ -44,11 +44,11 @@ export function LegalReviewNotice({ className }: { className?: string }) {
     <aside
       data-placeholder="true"
       className={cn(
-        'rounded-lg border border-dashed border-[color:var(--sand-400)]/50 bg-[color:var(--sand-400)]/[0.05] p-5 sm:p-6',
+        'rounded-lg border border-dashed border-[color:var(--steel-400)]/50 bg-[color:var(--steel-400)]/[0.05] p-5 sm:p-6',
         className,
       )}
     >
-      <p className="t-label mb-2 text-[color:var(--sand-300)]">{legalNotice.badge}</p>
+      <p className="t-label mb-2 text-[color:var(--steel-300)]">{legalNotice.badge}</p>
       <p className="text-sm leading-relaxed text-bone-200">{legalNotice.body}</p>
     </aside>
   )

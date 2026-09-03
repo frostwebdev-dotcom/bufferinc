@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
  */
 
 const controlBase =
-  'w-full rounded-md border bg-[color:color-mix(in_oklab,var(--ink-900)_80%,transparent)] px-4 py-3.5 text-[0.95rem] text-bone-100 transition-colors duration-[var(--dur-fast)] placeholder:text-[color:var(--ash-500)] focus:outline-none focus-visible:border-[color:var(--sand-400)]'
+  'w-full rounded-md border bg-[color:color-mix(in_oklab,var(--ink-900)_80%,transparent)] px-4 py-3.5 text-[0.95rem] text-bone-100 transition-colors duration-[var(--dur-fast)] placeholder:text-[color:var(--ash-500)] focus:outline-none focus-visible:border-[color:var(--steel-400)]'
 
 const controlState = (invalid: boolean) =>
   invalid
@@ -183,7 +183,7 @@ export function CheckboxField({
           aria-describedby={error ? `${id}-error` : undefined}
           className={cn(
             'mt-[3px] h-[1.05rem] w-[1.05rem] shrink-0 cursor-pointer appearance-none rounded-[3px] border bg-transparent transition-colors duration-[var(--dur-fast)]',
-            'checked:border-[color:var(--sand-400)] checked:bg-[color:var(--signal-amber)]',
+            'checked:border-[color:var(--steel-400)] checked:bg-[color:var(--signal)]',
             'checked:bg-[url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20d%3D%22M2.5%206.2l2.4%202.4L9.6%203.9%22%20fill%3D%22none%22%20stroke%3D%22%23070706%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E")] checked:bg-[length:0.8rem] checked:bg-center checked:bg-no-repeat',
             error ? 'border-[color:var(--error)]' : 'border-[color:var(--hairline-strong)]',
           )}

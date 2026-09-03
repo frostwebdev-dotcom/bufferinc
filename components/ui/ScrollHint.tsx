@@ -60,14 +60,14 @@ export function ScrollHint({ label, srLabel }: { label: string; srLabel?: string
         />
         <path
           d="M7 1v24"
-          stroke="var(--signal-amber)"
+          stroke="var(--signal)"
           strokeWidth="1"
           strokeLinecap="round"
           strokeDasharray="6 26"
           className="scroll-hint__filament"
         />
-        <circle cx="7" cy="29" r="2.6" fill="var(--signal-amber)" opacity="0.2" />
-        <circle cx="7" cy="29" r="1.2" fill="var(--signal-amber)" />
+        <circle cx="7" cy="29" r="2.6" fill="var(--signal)" opacity="0.2" />
+        <circle cx="7" cy="29" r="1.2" fill="var(--signal)" />
       </svg>
 
       <span className="t-mono uppercase tracking-[0.22em] text-[color:var(--text-muted)]">

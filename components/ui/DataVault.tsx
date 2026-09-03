@@ -42,9 +42,9 @@ export function DataVault({ labels, className }: { labels: readonly string[]; cl
       <svg viewBox="0 0 360 360" aria-hidden="true" role="presentation" className="w-full max-w-[28rem] overflow-visible">
         <defs>
           <radialGradient id="vault-core" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="var(--signal-amber)" stopOpacity="0.55" />
-            <stop offset="60%" stopColor="var(--sand-400)" stopOpacity="0.12" />
-            <stop offset="100%" stopColor="var(--sand-400)" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--signal)" stopOpacity="0.55" />
+            <stop offset="60%" stopColor="var(--steel-400)" stopOpacity="0.12" />
+            <stop offset="100%" stopColor="var(--steel-400)" stopOpacity="0" />
           </radialGradient>
         </defs>
 
@@ -74,7 +74,7 @@ export function DataVault({ labels, className }: { labels: readonly string[]; cl
                 cy={gate.y}
                 r="3.2"
                 fill="var(--ink-950)"
-                stroke={channel.granted ? 'var(--sand-400)' : 'var(--ash-500)'}
+                stroke={channel.granted ? 'var(--steel-400)' : 'var(--ash-500)'}
                 strokeWidth="1.1"
               />
               {!channel.granted ? (
@@ -105,8 +105,8 @@ export function DataVault({ labels, className }: { labels: readonly string[]; cl
 
         {/* The answer surface at the centre. */}
         <circle cx={CENTER} cy={CENTER} r="58" fill="url(#vault-core)" />
-        <circle cx={CENTER} cy={CENTER} r="26" fill="none" stroke="var(--sand-400)" strokeWidth="1" />
-        <circle cx={CENTER} cy={CENTER} r="4.5" fill="var(--signal-amber)" />
+        <circle cx={CENTER} cy={CENTER} r="26" fill="none" stroke="var(--steel-400)" strokeWidth="1" />
+        <circle cx={CENTER} cy={CENTER} r="4.5" fill="var(--signal)" />
 
         {/* Human oversight marker: the review point on the way out. */}
         <g>
@@ -115,7 +115,7 @@ export function DataVault({ labels, className }: { labels: readonly string[]; cl
             y1={CENTER - 26}
             x2={CENTER}
             y2={CENTER - 74}
-            stroke="var(--sand-400)"
+            stroke="var(--steel-400)"
             strokeWidth="1"
             strokeDasharray="3 4"
           />
@@ -126,17 +126,17 @@ export function DataVault({ labels, className }: { labels: readonly string[]; cl
             height="13"
             rx="6.5"
             fill="var(--ink-950)"
-            stroke="var(--sand-300)"
+            stroke="var(--steel-300)"
             strokeWidth="1"
           />
-          <circle cx={CENTER} cy={CENTER - 79.5} r="2" fill="var(--sand-300)" />
+          <circle cx={CENTER} cy={CENTER - 79.5} r="2" fill="var(--steel-300)" />
         </g>
       </svg>
 
       <figcaption className="mt-6 flex flex-wrap gap-x-5 gap-y-2">
         {labels.map((label) => (
           <span key={label} className="t-mono flex items-center gap-2 text-[color:var(--text-muted)]">
-            <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[color:var(--sand-400)]" />
+            <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[color:var(--steel-400)]" />
             {label}
           </span>
         ))}

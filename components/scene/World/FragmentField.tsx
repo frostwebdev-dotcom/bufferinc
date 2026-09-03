@@ -151,7 +151,7 @@ export function FragmentField({ count }: { count: number }) {
       <boxGeometry args={[1, 1, 1]} />
       <meshBasicMaterial
         ref={materialRef}
-        color="#8a857a"
+        color="#7c8798"
         transparent
         // Starting value only; driven per frame from scroll progress above.
         opacity={0.05}

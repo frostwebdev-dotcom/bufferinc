@@ -60,8 +60,8 @@ export function FrictionMap({
       >
         <defs>
           <radialGradient id="friction-core" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="var(--signal-amber)" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="var(--sand-400)" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--signal)" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="var(--steel-400)" stopOpacity="0" />
           </radialGradient>
         </defs>
 
@@ -117,7 +117,7 @@ export function FrictionMap({
                 cy={node.y}
                 r={node.r}
                 fill="var(--ink-950)"
-                stroke={isActive ? 'var(--signal-amber)' : 'var(--graphite-700)'}
+                stroke={isActive ? 'var(--signal)' : 'var(--graphite-700)'}
                 strokeWidth={isActive ? 1.6 : 1.1}
               />
 
@@ -125,7 +125,7 @@ export function FrictionMap({
                 cx={node.x}
                 cy={node.y}
                 r={isActive ? 3.4 : 2}
-                fill={isActive ? 'var(--signal-amber)' : 'var(--ash-500)'}
+                fill={isActive ? 'var(--signal)' : 'var(--ash-500)'}
               />
 
               <text
@@ -145,7 +145,7 @@ export function FrictionMap({
       </svg>
 
       <figcaption className="t-mono mt-4 flex items-center gap-2.5 text-[color:var(--text-muted)]">
-        <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[color:var(--signal-amber)]" />
+        <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[color:var(--signal)]" />
         {active ? `${active.index} — ${active.title}` : 'Operational friction'}
       </figcaption>
     </figure>

@@ -53,7 +53,7 @@ export default function AccessibilityRoute() {
             </PlaceholderMark>
           </p>
         ) : (
-          <p data-placeholder="true" className="t-mono text-[color:var(--sand-300)]">
+          <p data-placeholder="true" className="t-mono text-[color:var(--steel-300)]">
             {company.email.note}
           </p>
         )}

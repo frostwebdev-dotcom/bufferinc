@@ -25,7 +25,7 @@ const variants: Record<Variant, string> = {
   primary:
     'bg-chalk-50 text-ink-950 hover:bg-white focus-visible:bg-white shadow-[0_0_0_1px_rgba(245,241,232,0.12),0_18px_44px_-24px_rgba(242,189,104,0.5)]',
   secondary:
-    'border border-[color:var(--hairline-strong)] text-bone-100 hover:border-[color:var(--sand-400)] hover:text-chalk-50 bg-[color:color-mix(in_oklab,var(--ink-900)_70%,transparent)]',
+    'border border-[color:var(--hairline-strong)] text-bone-100 hover:border-[color:var(--steel-400)] hover:text-chalk-50 bg-[color:color-mix(in_oklab,var(--ink-900)_70%,transparent)]',
   ghost: 'text-bone-200 hover:text-chalk-50',
 }
 

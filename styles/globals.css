@@ -1,35 +1,55 @@
 @import 'tailwindcss';
 
 /* ==========================================================================
-   BufferInc — Solar Monochrome
-   Layered mineral neutrals, bone highlights, warm sand, rare amber energy.
+   BufferInc — Infrared Monochrome / Giedi Prime Futurism
+   Crushed blacks, silver highlights, a deliberately thin band of middle grey.
    Raw values live here as CSS custom properties; the @theme block below maps
    them into Tailwind utilities so both systems stay in sync.
    ========================================================================== */
 
 :root {
   /*
-   * Solar Monochrome, graded warm toward the Dune reference.
+   * Infrared monochrome, after the Giedi Prime sequences.
    *
-   * Every step keeps its original relative luminance, so contrast ratios are
-   * unchanged and text still passes AA — only the hue moves. The neutrals now
-   * carry a sand/ember cast instead of reading as pure greys, which is what
-   * separates a warm cinematic dark from a plain black-and-white one.
+   * This is NOT grayscale with a blue tint. Three things make it read as
+   * infrared film rather than as dark mode:
+   *
+   *   Crushed blacks. The dark end is pushed close to zero and the steps
+   *   between the dark tones are tiny, so surfaces separate by edge and
+   *   texture rather than by brightness.
+   *
+   *   Blown highlights. The light end is pushed near paper-white, brighter
+   *   than the old palette, so type and lit edges read as exposed film.
+   *
+   *   A thin middle. The gap between graphite-700 and ash-500 is deliberately
+   *   large — there is very little usable mid-grey, which is what stops the
+   *   page settling into comfortable neutrality.
+   *
+   * The hue is a faint cool cast, never a colour. Everything sits within a few
+   * points of neutral so it reads as film stock, not as "blue theme".
+   *
+   * Contrast: ash-500 on ink-950 is now ~5.0:1, up from ~4.3:1 in the warm
+   * grade — the crushed black buys back headroom, so the small mono labels
+   * clear AA with margin rather than sitting just under it.
    */
-  --ink-950: #0a0705;
-  --ink-900: #120c08;
-  --graphite-800: #221811;
-  --graphite-700: #33251a;
-  --ash-500: #7d6e5c;
-  --ash-400: #a4927b;
-  --bone-200: #ddd0b6;
-  --bone-100: #f0e4cb;
-  --chalk-50: #fdf5e6;
-  --sand-400: #c2954f;
-  --sand-300: #dcae63;
-  --signal-amber: #ffbe63;
-  --error: #d95c4f;
-  --success: #9eae77;
+  --ink-950: #040507;
+  --ink-900: #090b0e;
+  --graphite-800: #14171c;
+  --graphite-700: #222630;
+  --ash-500: #7d848e;
+  --ash-400: #a1a8b2;
+  --bone-200: #ced4dc;
+  --bone-100: #e8ecf1;
+  --chalk-50: #f7fafc;
+  /* Brushed metal, for rules, ticks and quiet indicators. */
+  --steel-400: #8d97a5;
+  --steel-300: #b7c0cc;
+  /* The signal is a blown highlight, not a colour: near-white with a cool cast. */
+  --signal: #e9f2fa;
+  /* Functional states only. Desaturated so they read as instrument warnings
+     rather than as decoration. */
+  --error: #c96b62;
+  --success: #8f9d8a;
 
   /* Semantic surface + text roles */
   --surface: var(--ink-950);
@@ -40,7 +60,7 @@
   --text-primary: var(--bone-100);
   --text-secondary: var(--ash-400);
   --text-muted: var(--ash-500);
-  --accent: var(--signal-amber);
+  --accent: var(--signal);
 
   /* Rhythm */
   --shell-max: 82rem;
@@ -67,9 +87,9 @@
   --color-bone-200: var(--bone-200);
   --color-bone-100: var(--bone-100);
   --color-chalk-50: var(--chalk-50);
-  --color-sand-400: var(--sand-400);
-  --color-sand-300: var(--sand-300);
-  --color-amber: var(--signal-amber);
+  --color-steel-400: var(--steel-400);
+  --color-steel-300: var(--steel-300);
+  --color-signal: var(--signal);
   --color-error: var(--error);
   --color-success: var(--success);
 
@@ -172,13 +192,13 @@ canvas {
 }
 
 :focus-visible {
-  outline: 2px solid var(--signal-amber);
+  outline: 2px solid var(--signal);
   outline-offset: 3px;
   border-radius: 2px;
 }
 
 ::selection {
-  background: color-mix(in oklab, var(--signal-amber) 34%, transparent);
+  background: color-mix(in oklab, var(--signal) 34%, transparent);
   color: var(--chalk-50);
 }
 
@@ -274,13 +294,13 @@ canvas {
   background:
     radial-gradient(
       58% 46% at 50% 46%,
-      rgba(10, 7, 5, 0.9) 0%,
-      rgba(10, 7, 5, 0.78) 38%,
-      rgba(10, 7, 5, 0.42) 66%,
-      rgba(10, 7, 5, 0.12) 86%,
+      rgba(4, 5, 7, 0.9) 0%,
+      rgba(4, 5, 7, 0.78) 38%,
+      rgba(4, 5, 7, 0.42) 66%,
+      rgba(4, 5, 7, 0.12) 86%,
       transparent 100%
     ),
-    rgba(10, 7, 5, 0.26);
+    rgba(4, 5, 7, 0.26);
 }
 
 /* Narrow screens have no spare margin, so the wash reaches further out. */
@@ -289,12 +309,12 @@ canvas {
     background:
       radial-gradient(
         82% 58% at 50% 46%,
-        rgba(10, 7, 5, 0.92) 0%,
-        rgba(10, 7, 5, 0.84) 46%,
-        rgba(10, 7, 5, 0.58) 78%,
-        rgba(10, 7, 5, 0.36) 100%
+        rgba(4, 5, 7, 0.92) 0%,
+        rgba(4, 5, 7, 0.84) 46%,
+        rgba(4, 5, 7, 0.58) 78%,
+        rgba(4, 5, 7, 0.36) 100%
       ),
-      rgba(10, 7, 5, 0.3);
+      rgba(4, 5, 7, 0.3);
   }
 }
 
@@ -303,7 +323,7 @@ canvas {
   inset: 0;
   z-index: 3;
   pointer-events: none;
-  opacity: 0.38;
+  opacity: 0.5;
   mix-blend-mode: overlay;
   background-size: 170px 170px;
 }
@@ -315,8 +335,8 @@ canvas {
   pointer-events: none;
   mix-blend-mode: screen;
   background:
-    radial-gradient(70% 55% at 88% 18%, rgba(255, 176, 88, 0.16) 0%, transparent 62%),
-    radial-gradient(90% 70% at 8% 96%, rgba(196, 96, 32, 0.10) 0%, transparent 58%);
+    radial-gradient(66% 52% at 84% 14%, rgba(214, 231, 247, 0.11) 0%, transparent 60%),
+    radial-gradient(88% 68% at 10% 98%, rgba(150, 172, 196, 0.07) 0%, transparent 56%);
 }
 
 .atmos-vignette {
@@ -324,17 +344,21 @@ canvas {
   inset: 0;
   z-index: 2;
   pointer-events: none;
+  /* Heavier than a conventional vignette. Crushing the corners toward true
+     black is most of what separates infrared film from a dark theme — it puts
+     the frame in shadow and leaves the lit centre to carry everything. */
   background:
-    radial-gradient(115% 78% at 50% 8%, transparent 42%, rgba(10, 7, 5, 0.66) 100%),
-    linear-gradient(180deg, rgba(10, 7, 5, 0.5) 0%, transparent 20%);
+    radial-gradient(112% 76% at 50% 10%, transparent 34%, rgba(4, 5, 7, 0.86) 100%),
+    linear-gradient(180deg, rgba(4, 5, 7, 0.62) 0%, transparent 18%);
 }
 
-.halo-warm {
+.halo {
   position: absolute;
   pointer-events: none;
   border-radius: 999px;
   filter: blur(64px);
-  background: radial-gradient(circle, color-mix(in oklab, var(--sand-400) 24%, transparent) 0%, transparent 70%);
+  /* Cold halation — the bloom around a blown highlight on film. */
+  background: radial-gradient(circle, color-mix(in oklab, var(--signal) 16%, transparent) 0%, transparent 70%);
 }
 
 /* --------------------------------------------------------------------------
@@ -525,7 +549,7 @@ html.js [data-reveal][data-revealed='true'] {
   background: linear-gradient(
     100deg,
     transparent 38%,
-    color-mix(in oklab, var(--signal-amber) 55%, transparent) 50%,
+    color-mix(in oklab, var(--signal) 55%, transparent) 50%,
     transparent 62%
   );
 }
@@ -554,7 +578,7 @@ html.js [data-reveal][data-revealed='true'] {
   width: 0.14em;
   height: 0.14em;
   border-radius: 999px;
-  background: var(--sand-300);
+  background: var(--steel-300);
   animation: buffer-pulse 1.05s cubic-bezier(0.45, 0, 0.25, 1) infinite;
 }
 
@@ -652,11 +676,18 @@ html.js [data-reveal][data-revealed='true'] {
 .card {
   position: relative;
   border: 1px solid var(--hairline);
-  background: linear-gradient(
-    168deg,
-    color-mix(in oklab, var(--graphite-800) 82%, transparent) 0%,
-    color-mix(in oklab, var(--ink-900) 92%, transparent) 100%
-  );
+  /*
+   * Concrete, not a tinted panel. A near-flat body with a single bright edge
+   * along the top: on a crushed-black ground, surfaces have to read by their
+   * lit edge rather than by being lighter than what surrounds them.
+   */
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--bone-200) 7%, transparent) 0%, transparent 1px),
+    linear-gradient(
+      168deg,
+      color-mix(in oklab, var(--graphite-800) 70%, transparent) 0%,
+      color-mix(in oklab, var(--ink-900) 88%, transparent) 100%
+    );
   border-radius: 0.75rem;
   transition:
     border-color var(--dur-base) var(--ease-out-weighted),
@@ -829,7 +860,7 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
   position: absolute;
   inset-block: 0;
   width: 22%;
-  background: linear-gradient(90deg, transparent, var(--signal-amber), transparent);
+  background: linear-gradient(90deg, transparent, var(--signal), transparent);
   animation: impact-sweep 7s cubic-bezier(0.5, 0, 0.3, 1) infinite;
 }
 
@@ -860,7 +891,7 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
   inset-inline: 0;
   top: 0;
   height: 1px;
-  background: var(--signal-amber);
+  background: var(--signal);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform var(--dur-slow) var(--ease-out-weighted);
@@ -905,7 +936,7 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
     height: 10px;
   }
   16% {
-    background: var(--sand-400);
+    background: var(--steel-400);
     height: 14px;
   }
 }
@@ -921,7 +952,7 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
     animation: none;
   }
   .impact-phase i:first-child {
-    background: var(--sand-400);
+    background: var(--steel-400);
   }
 }
 
@@ -962,7 +993,7 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
   inset-inline: 0;
   top: 0;
   height: calc(var(--process-progress) * 100%);
-  background: linear-gradient(180deg, var(--sand-400), var(--signal-amber));
+  background: linear-gradient(180deg, var(--steel-400), var(--signal));
   transition: height 120ms linear;
 }
 
@@ -975,10 +1006,10 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
   margin-left: -4.5px;
   margin-top: -4.5px;
   border-radius: 999px;
-  background: var(--signal-amber);
+  background: var(--signal);
   box-shadow:
-    0 0 0 4px color-mix(in oklab, var(--signal-amber) 16%, transparent),
-    0 0 18px 4px color-mix(in oklab, var(--signal-amber) 34%, transparent);
+    0 0 0 4px color-mix(in oklab, var(--signal) 16%, transparent),
+    0 0 18px 4px color-mix(in oklab, var(--signal) 34%, transparent);
   transition: top 120ms linear;
 }
 
@@ -1016,7 +1047,7 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
 .process-step__node {
   border-color: color-mix(
     in oklab,
-    var(--sand-400) calc(var(--reached, 0) * 100%),
+    var(--steel-400) calc(var(--reached, 0) * 100%),
     var(--graphite-700)
   );
 }
@@ -1024,7 +1055,7 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
 .process-step__node > span {
   background: color-mix(
     in oklab,
-    var(--signal-amber) calc(var(--reached, 0) * 100%),
+    var(--signal) calc(var(--reached, 0) * 100%),
     var(--graphite-700)
   );
 }
@@ -1055,7 +1086,7 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
     inset-inline: 0 auto;
     height: auto;
     width: calc(var(--process-progress) * 100%);
-    background: linear-gradient(90deg, var(--sand-400), var(--signal-amber));
+    background: linear-gradient(90deg, var(--steel-400), var(--signal));
     transition: width 120ms linear;
   }
 
@@ -1130,8 +1161,8 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: #ffe4b0;
-  box-shadow: 0 0 10px 2px color-mix(in oklab, var(--signal-amber) 70%, transparent);
+  background: #ffffff;
+  box-shadow: 0 0 10px 2px color-mix(in oklab, var(--signal) 70%, transparent);
 }
 
 .spark-dom__halo {
@@ -1143,7 +1174,7 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
   border-radius: 999px;
   background: radial-gradient(
     circle,
-    color-mix(in oklab, var(--signal-amber) 34%, transparent) 0%,
+    color-mix(in oklab, var(--signal) 34%, transparent) 0%,
     transparent 68%
   );
   animation: spark-breathe 4.2s var(--ease-in-out-weighted) infinite;
@@ -1156,7 +1187,7 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  border: 1px solid var(--signal-amber);
+  border: 1px solid var(--signal);
   animation: ring-expand 1.15s var(--ease-out-weighted) 1 forwards;
 }
 
@@ -1185,7 +1216,7 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
   width: 3px;
   height: 3px;
   border-radius: 999px;
-  background: var(--signal-amber);
+  background: var(--signal);
 }
 
 .spark-dom__orbit i:nth-child(1) {
@@ -1253,9 +1284,9 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
     border-radius: 999px;
     background: radial-gradient(
       circle closest-side,
-      rgba(255, 244, 214, 0.72) 0%,
-      rgba(255, 196, 110, 0.4) 30%,
-      rgba(226, 133, 48, 0.14) 60%,
+      rgba(255, 255, 255, 0.8) 0%,
+      rgba(222, 238, 252, 0.44) 30%,
+      rgba(150, 180, 210, 0.14) 60%,
       transparent 100%
     );
   }
@@ -1273,11 +1304,11 @@ html.js .transition-row:not([data-revealed='true']) .transition-row__to {
     will-change: transform, opacity;
     background: radial-gradient(
       circle closest-side,
-      rgba(255, 231, 180, 0.62) 0%,
-      rgba(255, 190, 99, 0.38) 16%,
-      rgba(214, 128, 46, 0.20) 36%,
-      rgba(150, 74, 22, 0.09) 60%,
-      rgba(80, 38, 10, 0.03) 80%,
+      rgba(246, 252, 255, 0.6) 0%,
+      rgba(211, 232, 250, 0.36) 16%,
+      rgba(150, 180, 212, 0.18) 36%,
+      rgba(92, 118, 148, 0.08) 60%,
+      rgba(40, 54, 70, 0.03) 80%,
       transparent 100%
     );
   }

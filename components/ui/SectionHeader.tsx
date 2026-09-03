@@ -63,7 +63,7 @@ export function IndexMark({ value, className }: { value: string; className?: str
   return (
     <span
       aria-hidden="true"
-      className={cn('t-mono text-[0.7rem] tabular-nums text-[color:var(--sand-400)]', className)}
+      className={cn('t-mono text-[0.7rem] tabular-nums text-[color:var(--steel-400)]', className)}
     >
       {value}
     </span>

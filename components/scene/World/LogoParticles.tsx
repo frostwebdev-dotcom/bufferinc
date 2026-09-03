@@ -352,13 +352,20 @@ export function LogoParticles({
       uPixelRatio: { value: 1 },
       uVelocity: { value: 0 },
       uOpacity: { value: opacity },
-      uBoneColor: { value: new THREE.Color('#e6d4b2') },
-      uChalkColor: { value: new THREE.Color('#fff4de') },
-      // The mark's own accent. One line to fold it into the warm palette.
-      uAccentColor: { value: new THREE.Color('#3f7bff') },
-      uEmberColor: { value: new THREE.Color('#c2410c') },
-      uFlameColor: { value: new THREE.Color('#ffb457') },
-      uCoreColor: { value: new THREE.Color('#fff3d0') },
+      // Infrared: silver body, blown-white highlights, no warmth anywhere.
+      uBoneColor: { value: new THREE.Color('#aab4c2') },
+      uChalkColor: { value: new THREE.Color('#ffffff') },
+      /*
+       * The mark's accent stroke. The brand asset is blue, but the direction
+       * asks for minimal conventional colour, so it is rendered as a cool
+       * near-white that separates from the body by brightness rather than by
+       * hue. Restoring the brand blue is this one line.
+       */
+      uAccentColor: { value: new THREE.Color('#dbe9f7') },
+      // The orb, from its outer falloff inward: cold steel, silver, blown white.
+      uEmberColor: { value: new THREE.Color('#54637a') },
+      uFlameColor: { value: new THREE.Color('#c2d4e6') },
+      uCoreColor: { value: new THREE.Color('#ffffff') },
     }),
     [opacity, pathTexture, paths],
   )

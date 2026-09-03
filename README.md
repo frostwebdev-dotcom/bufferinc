@@ -55,7 +55,7 @@ error rather than a runtime surprise.
 
 Anything not verified against real business records is wrapped in
 `unverified(value, note)` and collected in the exported `placeholders` array. In
-development these render with a dashed amber outline; in production the outline
+development these render with a dashed outline; in production the outline
 is dropped but `data-placeholder="true"` stays in the DOM, and the e2e suite
 asserts on it.
 
@@ -82,7 +82,7 @@ components/
 content/site.ts         All copy and configuration
 lib/                    Spark machine, scroll engine, motion, webgl, contact,
                         analytics, seo, store
-styles/globals.css      Solar Monochrome tokens and component styles
+styles/globals.css      Infrared Monochrome tokens and component styles
 tests/unit              Vitest
 tests/e2e               Playwright
 ```
@@ -119,7 +119,7 @@ animation flags scattered through components.
 **The transformation runs on the GPU.** Each particle carries two positions —
 where it starts in the disorder and where it belongs once organised — and the
 vertex shader mixes between them from scroll progress plus a per-particle
-stagger. Whether there are 900 particles or 2600, the per-frame CPU cost is a
+stagger. Whether there are 6,500 particles or 18,000, the per-frame CPU cost is a
 handful of uniform writes.
 
 **GSAP boundary.** GSAP + ScrollTrigger is registered in
@@ -137,8 +137,8 @@ by [`lib/webgl.ts`](lib/webgl.ts):
 
 | Tier       | When                                                  | Particles | Fragments | Max DPR |
 | ---------- | ----------------------------------------------------- | --------- | --------- | ------- |
-| `full`     | Capable desktop                                        | 2600      | 220       | 1.75    |
-| `balanced` | Touch, ≤4 cores, ≤4 GB RAM, or narrow viewport         | 900       | 90        | 1.25    |
+| `full`     | Capable desktop                                        | 18000     | 240       | 1.75    |
+| `balanced` | Touch, ≤4 cores, ≤4 GB RAM, or narrow viewport         | 6500      | 110       | 1.25    |
 | `fallback` | No WebGL, reduced motion, Save-Data, or ≤2 GB RAM      | —         | —         | —       |
 
 At the `fallback` tier no renderer is created and the DOM/SVG Spark renders

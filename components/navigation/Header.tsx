@@ -84,7 +84,7 @@ export function Header() {
                       <span
                         aria-hidden="true"
                         className={cn(
-                          'absolute inset-x-3.5 bottom-1 h-px origin-left bg-[color:var(--sand-400)] transition-transform duration-[var(--dur-base)] ease-[var(--ease-weighted)]',
+                          'absolute inset-x-3.5 bottom-1 h-px origin-left bg-[color:var(--steel-400)] transition-transform duration-[var(--dur-base)] ease-[var(--ease-weighted)]',
                           isActive ? 'scale-x-100' : 'scale-x-0',
                         )}
                       />

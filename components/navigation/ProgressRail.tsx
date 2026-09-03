@@ -54,7 +54,7 @@ export function ProgressRail() {
 
       <div className="relative h-40 w-px bg-[color:var(--hairline)]">
         <div
-          className="absolute inset-x-0 top-0 bg-gradient-to-b from-[color:var(--sand-400)] to-[color:var(--signal-amber)]"
+          className="absolute inset-x-0 top-0 bg-gradient-to-b from-[color:var(--steel-400)] to-[color:var(--signal)]"
           style={{ height: 'var(--rail-fill, 0%)' }}
         />
       </div>
@@ -65,7 +65,7 @@ export function ProgressRail() {
             key={id}
             className={cn(
               'h-1 w-1 rounded-full transition-colors duration-500',
-              activeSection === id ? 'bg-[color:var(--signal-amber)]' : 'bg-[color:var(--graphite-700)]',
+              activeSection === id ? 'bg-[color:var(--signal)]' : 'bg-[color:var(--graphite-700)]',
             )}
           />
         ))}

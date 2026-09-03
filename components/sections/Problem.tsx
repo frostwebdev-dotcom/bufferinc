@@ -80,7 +80,7 @@ export function Problem() {
                     aria-hidden="true"
                     className={cn(
                       't-mono pt-1.5 tabular-nums transition-colors duration-500',
-                      isActive ? 'text-[color:var(--signal-amber)]' : 'text-[color:var(--ash-500)]',
+                      isActive ? 'text-[color:var(--signal)]' : 'text-[color:var(--ash-500)]',
                     )}
                   >
                     {point.index}

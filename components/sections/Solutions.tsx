@@ -73,7 +73,7 @@ export function Solutions() {
                       aria-hidden="true"
                       className={cn(
                         't-mono mt-1.5 shrink-0 tabular-nums transition-colors duration-300',
-                        isOpen ? 'text-[color:var(--signal-amber)]' : 'text-[color:var(--ash-500)]',
+                        isOpen ? 'text-[color:var(--signal)]' : 'text-[color:var(--ash-500)]',
                       )}
                     >
                       {solution.index}
@@ -101,8 +101,8 @@ export function Solutions() {
                       className={cn(
                         'mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all duration-[var(--dur-base)] ease-[var(--ease-weighted)]',
                         isOpen
-                          ? 'rotate-45 border-[color:var(--sand-400)] text-[color:var(--signal-amber)]'
-                          : 'border-[color:var(--hairline-strong)] text-bone-200 group-hover:border-[color:var(--sand-400)]',
+                          ? 'rotate-45 border-[color:var(--steel-400)] text-[color:var(--signal)]'
+                          : 'border-[color:var(--hairline-strong)] text-bone-200 group-hover:border-[color:var(--steel-400)]',
                       )}
                     >
                       <Plus className="h-4 w-4" />
@@ -182,12 +182,12 @@ function DiscussButton({ id, name }: { id: SolutionId; name: string }) {
         preselectInterest(id)
         track({ name: 'solution_discuss', props: { solution: id } })
       }}
-      className="group inline-flex w-fit items-center gap-2.5 rounded-full border border-[color:var(--hairline-strong)] px-5 py-3 font-[family-name:var(--font-mono)] text-[0.68rem] uppercase tracking-[0.14em] text-bone-100 transition-colors duration-[var(--dur-fast)] hover:border-[color:var(--sand-400)] hover:text-chalk-50"
+      className="group inline-flex w-fit items-center gap-2.5 rounded-full border border-[color:var(--hairline-strong)] px-5 py-3 font-[family-name:var(--font-mono)] text-[0.68rem] uppercase tracking-[0.14em] text-bone-100 transition-colors duration-[var(--dur-fast)] hover:border-[color:var(--steel-400)] hover:text-chalk-50"
     >
       {solutions.ctaLabel}
       <span
         aria-hidden="true"
-        className="h-1 w-1 rounded-full bg-[color:var(--signal-amber)] transition-transform duration-[var(--dur-fast)] group-hover:scale-150"
+        className="h-1 w-1 rounded-full bg-[color:var(--signal)] transition-transform duration-[var(--dur-fast)] group-hover:scale-150"
       />
     </a>
   )

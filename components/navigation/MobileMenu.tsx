@@ -122,7 +122,7 @@ export function MobileMenu({ open, onClose, triggerRef }: MobileMenuProps) {
                   onClick={onClose}
                   className="flex items-baseline gap-4 py-4 font-[family-name:var(--font-display)] text-2xl tracking-[-0.03em] text-bone-100 transition-colors hover:text-chalk-50"
                 >
-                  <span className="t-mono text-[0.65rem] text-[color:var(--sand-400)]">
+                  <span className="t-mono text-[0.65rem] text-[color:var(--steel-400)]">
                     {String(index + 1).padStart(2, '0')}
                   </span>
                   {item.label}

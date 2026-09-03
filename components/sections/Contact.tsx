@@ -33,7 +33,7 @@ export function Contact() {
                     href={`mailto:${company.email.value}`}
                     className="group inline-flex items-center gap-3 text-bone-100 transition-colors hover:text-chalk-50"
                   >
-                    <Mail aria-hidden="true" className="h-4 w-4 text-[color:var(--sand-400)]" />
+                    <Mail aria-hidden="true" className="h-4 w-4 text-[color:var(--steel-400)]" />
                     <span className="link-underline">{company.email.value}</span>
                   </a>
                 </PlaceholderMark>
@@ -47,7 +47,7 @@ export function Contact() {
                     rel="noreferrer noopener"
                     className="group inline-flex items-center gap-3 text-bone-100 transition-colors hover:text-chalk-50"
                   >
-                    <Linkedin aria-hidden="true" className="h-4 w-4 text-[color:var(--sand-400)]" />
+                    <Linkedin aria-hidden="true" className="h-4 w-4 text-[color:var(--steel-400)]" />
                     <span className="link-underline">LinkedIn</span>
                   </a>
                 </PlaceholderMark>

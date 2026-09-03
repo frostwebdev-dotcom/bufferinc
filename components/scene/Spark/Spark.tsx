@@ -89,12 +89,12 @@ export function Spark({
    * them back off `material.uniforms` would go through an index signature.
    */
   const trailUniforms = useMemo(
-    () => ({ uColor: { value: new THREE.Color('#f2bd68') }, uStrength: { value: 1 } }),
+    () => ({ uColor: { value: new THREE.Color('#dcebfa') }, uStrength: { value: 1 } }),
     [],
   )
 
   const haloUniforms = useMemo(
-    () => ({ uColor: { value: new THREE.Color('#f2bd68') }, uIntensity: { value: 1 } }),
+    () => ({ uColor: { value: new THREE.Color('#dcebfa') }, uIntensity: { value: 1 } }),
     [],
   )
 
@@ -167,7 +167,7 @@ export function Spark({
    * gentle one looks like light in air.
    */
   const orbUniforms = useMemo(
-    () => ({ uColor: { value: new THREE.Color('#ffd79a') }, uIntensity: { value: 0 } }),
+    () => ({ uColor: { value: new THREE.Color('#eef7ff') }, uIntensity: { value: 0 } }),
     [],
   )
 
@@ -204,7 +204,7 @@ export function Spark({
   const ringMaterial = useMemo(
     () =>
       new THREE.MeshBasicMaterial({
-        color: new THREE.Color('#f2bd68'),
+        color: new THREE.Color('#dcebfa'),
         transparent: true,
         opacity: 0,
         depthWrite: false,
@@ -435,7 +435,7 @@ export function Spark({
         {/* Core */}
         <mesh ref={coreRef}>
           <sphereGeometry args={[1, 12, 12]} />
-          <meshBasicMaterial color="#ffe4b0" toneMapped={false} />
+          <meshBasicMaterial color="#ffffff" toneMapped={false} />
         </mesh>
 
         {/* The orb's soft body — only present once it has gathered */}
@@ -460,7 +460,7 @@ export function Spark({
             return (
               <mesh key={i} position={[Math.cos(angle) * 0.36, Math.sin(angle) * 0.36, 0]}>
                 <sphereGeometry args={[0.035, 8, 8]} />
-                <meshBasicMaterial color="#f2bd68" transparent opacity={0} toneMapped={false} />
+                <meshBasicMaterial color="#dcebfa" transparent opacity={0} toneMapped={false} />
               </mesh>
             )
           })}

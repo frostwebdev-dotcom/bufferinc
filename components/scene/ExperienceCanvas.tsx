@@ -46,7 +46,7 @@ export function ExperienceCanvas({
 
   const handleCreated = useCallback(
     ({ gl }: { gl: THREE.WebGLRenderer }) => {
-      gl.setClearColor(0x0a0705, 0)
+      gl.setClearColor(0x040507, 0)
 
       const canvas = gl.domElement
       const onLost = (event: Event) => {

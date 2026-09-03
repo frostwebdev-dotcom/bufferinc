@@ -29,12 +29,12 @@ export function Pricing() {
               <article
                 className={cn(
                   'card card--interactive flex h-full flex-col p-7 sm:p-9',
-                  tier.featured && 'border-[color:var(--sand-400)]/45',
+                  tier.featured && 'border-[color:var(--steel-400)]/45',
                 )}
               >
                 {tier.featured ? (
-                  <p className="t-mono mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--sand-400)]/40 px-3 py-1 text-[0.62rem] uppercase tracking-[0.16em] text-[color:var(--sand-300)]">
-                    <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[color:var(--signal-amber)]" />
+                  <p className="t-mono mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-[color:var(--steel-400)]/40 px-3 py-1 text-[0.62rem] uppercase tracking-[0.16em] text-[color:var(--steel-300)]">
+                    <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[color:var(--signal)]" />
                     Most common
                   </p>
                 ) : null}
@@ -59,7 +59,7 @@ export function Pricing() {
                     <li key={item} className="flex gap-3 text-[0.9rem] leading-relaxed text-bone-200">
                       <Check
                         aria-hidden="true"
-                        className="mt-[3px] h-3.5 w-3.5 shrink-0 text-[color:var(--sand-400)]"
+                        className="mt-[3px] h-3.5 w-3.5 shrink-0 text-[color:var(--steel-400)]"
                       />
                       {item}
                     </li>

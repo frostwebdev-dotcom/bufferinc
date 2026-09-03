@@ -21,7 +21,7 @@ export function Footer() {
       <div className="relative overflow-hidden border-b border-[color:var(--hairline)]">
         <div
           aria-hidden="true"
-          className="halo-warm left-1/2 top-full h-[34rem] w-[52rem] max-w-[94vw] -translate-x-1/2 -translate-y-1/2 opacity-45"
+          className="halo left-1/2 top-full h-[34rem] w-[52rem] max-w-[94vw] -translate-x-1/2 -translate-y-1/2 opacity-45"
         />
 
         <div className="shell relative flex flex-col items-center gap-9 py-24 text-center sm:py-32">

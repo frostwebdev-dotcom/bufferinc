@@ -80,8 +80,8 @@ export function BufferGlyph({ className, ...rest }: SVGProps<SVGSVGElement>) {
       <circle cx="12" cy="12" r="9" stroke="var(--graphite-700)" strokeWidth="1.6" />
       <path d="M12 3a9 9 0 0 1 8.49 6.02" stroke="var(--bone-200)" strokeWidth="1.8" strokeLinecap="round" />
       <path d="M3.6 15.2A9 9 0 0 0 8.7 20.4" stroke="var(--ash-500)" strokeWidth="1.8" strokeLinecap="round" />
-      <circle cx="20.5" cy="9.1" r="2.2" fill="var(--signal-amber)" opacity="0.2" />
-      <circle cx="20.5" cy="9.1" r="1.05" fill="var(--signal-amber)" />
+      <circle cx="20.5" cy="9.1" r="2.2" fill="var(--signal)" opacity="0.2" />
+      <circle cx="20.5" cy="9.1" r="1.05" fill="var(--signal)" />
     </svg>
   )
 }

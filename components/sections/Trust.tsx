@@ -33,7 +33,7 @@ export function Trust() {
             />
 
             <blockquote
-              className="mt-9 border-l border-[color:var(--sand-400)] pl-5 text-[1.02rem] leading-relaxed text-bone-100"
+              className="mt-9 border-l border-[color:var(--steel-400)] pl-5 text-[1.02rem] leading-relaxed text-bone-100"
               data-reveal
               data-reveal-index="3"
             >

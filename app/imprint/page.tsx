@@ -69,7 +69,7 @@ export default function ImprintRoute() {
                   ) : (
                     <span
                       data-placeholder="true"
-                      className="t-mono text-[color:var(--sand-300)]"
+                      className="t-mono text-[color:var(--steel-300)]"
                       title={row.note}
                     >
                       {row.required ? 'Required — not yet supplied' : 'Not supplied'}
@@ -88,7 +88,7 @@ export default function ImprintRoute() {
           above, at the address given above.
         </p>
         {!hasValue(company.managingDirector) ? (
-          <p data-placeholder="true" className="t-mono text-[color:var(--sand-300)]">
+          <p data-placeholder="true" className="t-mono text-[color:var(--steel-300)]">
             {company.managingDirector.note}
           </p>
         ) : null}

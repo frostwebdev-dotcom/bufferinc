@@ -82,7 +82,7 @@ export function Process() {
                   <span />
                 </div>
 
-                <p className="t-mono mt-5 tabular-nums text-[color:var(--sand-400)]">{step.index}</p>
+                <p className="t-mono mt-5 tabular-nums text-[color:var(--steel-400)]">{step.index}</p>
                 <h3 className="t-h3 mt-2 text-chalk-50">{step.name}</h3>
                 <p className="mt-2.5 max-w-[34ch] text-[0.92rem] leading-relaxed text-[color:var(--text-secondary)]">
                   {step.body}

@@ -98,7 +98,7 @@ export function Intro() {
       aria-live="polite"
       aria-label="Loading"
     >
-      <div className="halo-warm left-1/2 top-1/2 h-[26rem] w-[26rem] max-w-[94vw] -translate-x-1/2 -translate-y-1/2 opacity-45" />
+      <div className="halo left-1/2 top-1/2 h-[26rem] w-[26rem] max-w-[94vw] -translate-x-1/2 -translate-y-1/2 opacity-45" />
 
       <Wordmark animate className="relative text-2xl sm:text-3xl" />
 
@@ -112,7 +112,7 @@ export function Intro() {
 
         <div className="h-px w-full bg-[color:var(--graphite-700)]">
           <div
-            className="h-px bg-[color:var(--signal-amber)] transition-[width] duration-150 ease-linear"
+            className="h-px bg-[color:var(--signal)] transition-[width] duration-150 ease-linear"
             style={{ width: `${progress}%` }}
           />
         </div>

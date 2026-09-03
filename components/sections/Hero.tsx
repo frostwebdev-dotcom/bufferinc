@@ -20,7 +20,7 @@ export function Hero() {
       {/* Decorative warm halation behind the headline. */}
       <div
         aria-hidden="true"
-        className="halo-warm left-1/2 top-[42%] h-[42rem] w-[42rem] max-w-[94vw] -translate-x-1/2 -translate-y-1/2 opacity-35"
+        className="halo left-1/2 top-[42%] h-[42rem] w-[42rem] max-w-[94vw] -translate-x-1/2 -translate-y-1/2 opacity-35"
       />
 
       <div className="shell relative">
@@ -60,7 +60,7 @@ export function Hero() {
             <li key={item} className="flex items-center gap-2.5">
               <span
                 aria-hidden="true"
-                className="h-1 w-1 rounded-full bg-[color:var(--sand-400)]"
+                className="h-1 w-1 rounded-full bg-[color:var(--steel-400)]"
               />
               <span className="t-mono text-[color:var(--text-secondary)]">{item}</span>
             </li>

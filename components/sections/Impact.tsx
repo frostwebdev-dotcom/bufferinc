@@ -39,7 +39,7 @@ export function Impact() {
               data-reveal-index={index + 1}
             >
               <div className="flex items-center justify-between gap-4">
-                <span aria-hidden="true" className="t-mono tabular-nums text-[color:var(--sand-400)]">
+                <span aria-hidden="true" className="t-mono tabular-nums text-[color:var(--steel-400)]">
                   {item.index}
                 </span>
                 <PhaseIndicator />
