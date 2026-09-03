@@ -135,7 +135,11 @@ const VERTEX = /* glsl */ `
     vec3 normal = normalize(cross(tangent, up));
     vec3 binormal = normalize(cross(tangent, normal));
 
-    vec3 bodyPos = centre + normal * aCross + binormal * aDepth;
+    // While resting as the vessel the body draws itself thin. A wide band
+    // blurs the silhouette, and the hourglass only reads if its outline is a
+    // line rather than a cloud.
+    float tighten = mix(1.0, 0.42, uSand);
+    vec3 bodyPos = centre + normal * aCross * tighten + binormal * aDepth * tighten;
 
     // A traveling wave down the body — strongest while moving, almost still
     // at rest. This is the "alive" part: muscle, not a rigid ribbon.
@@ -162,19 +166,28 @@ const VERTEX = /* glsl */ `
     // Positions are in the authored hourglass frame, then scaled to the path
     // so the stream sits inside the vessel rather than beside it.
     // The accent stroke stays on the outline so the silhouette still reads.
-    float isSand = step(0.58, aSeed) * step(row, 0.5);
-    float fall = fract(uTime * 0.24 + aSeed * 4.2);
+    // A fifth of the main stroke, not half. Taking too many empties the
+    // outline, and an hourglass with no vessel is just falling dust.
+    float isSand = step(0.80, aSeed) * step(row, 0.5);
+    // Hashed independently of aSeed, which also drives size and brightness —
+    // reusing it made the grains line up into threads instead of scattering.
+    float grainPhase = fract(sin(aSeed * 78.233) * 43758.5453);
+    float grainX = fract(sin(aSeed * 12.9898) * 24634.6345) * 2.0 - 1.0;
+    float fall = fract(uTime * 0.30 + grainPhase);
     float drop = fall < 0.28
       ? (fall / 0.28) * 0.14
       : fall < 0.64
         ? 0.14 + pow((fall - 0.28) / 0.36, 1.45) * 0.72
         : 0.86 + ((fall - 0.64) / 0.36) * 0.14;
-    float spread = aSeed * 2.0 - 1.0;
+    float spread = grainX;
     float neck = smoothstep(0.16, 0.40, drop) * (1.0 - smoothstep(0.58, 0.80, drop));
     // Funnel in from the bulb walls, then straight down the neck.
+    // Below the neck the grains spread again and settle into a heap, which is
+    // what makes the lower chamber read as filling rather than as a second jet.
+    float settled = smoothstep(0.72, 1.0, drop);
     vec3 sandPos = uMarkCentre + vec3(
-      spread * mix(0.22, 0.02, neck),
-      0.46 - drop * 0.92,
+      spread * mix(mix(0.20, 0.015, neck), 0.30, settled),
+      0.46 - drop * 0.92 + settled * 0.06,
       (fract(aSeed * 17.0) - 0.5) * 0.04
     ) * uMarkScale * uGlassScale;
     float sandMix = uSand * isSand;
