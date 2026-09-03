@@ -49,6 +49,8 @@ export type SnakePath = {
   readonly shapeHead: number
   /** Head position at which the body covers E exactly — the hourglass. */
   readonly glassHead: number
+  /** Scale applied to the authored hourglass, so sand sits inside the vessel. */
+  readonly glassScale: number
 }
 
 /* --------------------------------------------------------------------------
@@ -190,18 +192,18 @@ function figureEightLoop(): Vec3[] {
  */
 function hourglassVessel(): Vec3[] {
   return closedLoop([
-    [-0.50, 0.58, 0.04],
-    [-0.10, 0.14, 0.0],
+    [-0.58, 0.64, 0.04],
+    [-0.06, 0.10, 0.0],
     [0.0, 0.0, 0.0],
-    [0.10, -0.14, 0.0],
-    [0.50, -0.58, -0.04],
-    [0.0, -0.72, 0.06],
-    [-0.50, -0.58, -0.04],
-    [-0.10, -0.14, 0.0],
+    [0.06, -0.10, 0.0],
+    [0.58, -0.64, -0.04],
+    [0.0, -0.70, 0.05],
+    [-0.58, -0.64, -0.04],
+    [-0.06, -0.10, 0.0],
     [0.0, 0.0, 0.0],
-    [0.10, 0.14, 0.0],
-    [0.50, 0.58, 0.04],
-    [0.0, 0.72, -0.06],
+    [0.06, 0.10, 0.0],
+    [0.58, 0.64, 0.04],
+    [0.0, 0.70, -0.05],
   ])
 }
 
@@ -253,8 +255,10 @@ function buildLoop(strokeCentreline: Vec3[], shapeScaleHint: number, samples: nu
 
   // Scale both destination shapes so their arc length matches the mark's.
   // That equality is what lets the same body form every pose without stretching.
+  const rawGlass = hourglassVessel()
+  const glassScale = (lenA / (polylineLength(rawGlass) || 1)) * shapeScaleHint
   const c = scaleToLength(figureEightLoop(), lenA, shapeScaleHint)
-  const e = scaleToLength(hourglassVessel(), lenA, shapeScaleHint)
+  const e = scaleToLength(rawGlass, lenA, shapeScaleHint)
   const lenC = polylineLength(c)
   const lenE = polylineLength(e)
 
@@ -294,6 +298,7 @@ function buildLoop(strokeCentreline: Vec3[], shapeScaleHint: number, samples: nu
     markHead: endOfA,
     shapeHead: endOfC,
     glassHead: endOfE,
+    glassScale,
   }
 }
 

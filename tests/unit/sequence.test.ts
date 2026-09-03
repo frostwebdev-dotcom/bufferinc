@@ -208,6 +208,16 @@ describe('buildSnakePaths', () => {
     }
   })
 
+  it('reports a finite hourglass scale so sand can sit inside the vessel', () => {
+    for (const path of paths) {
+      expect(Number.isFinite(path.glassScale)).toBe(true)
+      expect(path.glassScale).toBeGreaterThan(0)
+      expect(path.glassScale).toBeLessThan(4)
+    }
+    // Sand is drawn from the main stroke; that vessel has to be a real size.
+    expect(paths[0]?.glassScale).toBeGreaterThan(0.08)
+  })
+
   it('places the hourglass after the figure-eight, with room to travel', () => {
     for (const path of paths) {
       expect(path.glassHead).toBeGreaterThan(path.shapeHead)

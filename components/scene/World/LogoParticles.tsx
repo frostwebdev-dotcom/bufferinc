@@ -65,6 +65,7 @@ const VERTEX = /* glsl */ `
   uniform float uPixelRatio;
   uniform float uVelocity;
   uniform float uSand;        // 0..1 hourglass sand fall
+  uniform float uGlassScale;  // matches the path-scaled hourglass
 
   attribute vec3  aScatter;
   attribute float aBodyU;     // 0 tail, 1 head
@@ -83,6 +84,7 @@ const VERTEX = /* glsl */ `
   varying float vSpeed;
   varying float vHead;
   varying float vStrand;
+  varying float vSand;
 
   #define TAU 6.283185307179586
   #define PI  3.141592653589793
@@ -141,29 +143,32 @@ const VERTEX = /* glsl */ `
       sin(uTime * 2.1 + aSeed * 2.6)
     ) * shimmer;
 
-    // Trailing: particles lag a touch further behind while the head is moving.
-    bodyPos -= tangent * uSpeed * aSeed * ${ARC_LAG.toFixed(3)} * 0.05;
+    // Trailing: the line is a tail. Each station lags the one ahead of it,
+    // so the body does not translate as a rigid stamp — it follows through.
+    bodyPos -= tangent * uSpeed * (1.0 - aBodyU) * ${ARC_LAG.toFixed(3)} * 0.085;
 
     bodyPos = uMarkCentre + bodyPos * uMarkScale;
 
     /* --- Sand falling through the hourglass ---------------------------- */
     // A share of the main stroke leaves the glass outline and drops through
     // the waist — linger at the top, fall fast through the neck, settle below.
-    // The accent stroke stays on the vessel so the silhouette still reads.
-    float isSand = step(0.66, aSeed) * step(row, 0.5);
-    float fall = fract(uTime * 0.42 + aSeed * 3.1);
-    float drop = fall < 0.26
-      ? (fall / 0.26) * 0.16
-      : fall < 0.52
-        ? 0.16 + ((fall - 0.26) / 0.26) * 0.68
-        : 0.84 + ((fall - 0.52) / 0.48) * 0.16;
+    // Positions are in the authored hourglass frame, then scaled to the path
+    // so the stream sits inside the vessel rather than beside it.
+    // The accent stroke stays on the outline so the silhouette still reads.
+    float isSand = step(0.52, aSeed) * step(row, 0.5);
+    float fall = fract(uTime * 0.26 + aSeed * 4.2);
+    float drop = fall < 0.30
+      ? (fall / 0.30) * 0.12
+      : fall < 0.62
+        ? 0.12 + pow((fall - 0.30) / 0.32, 1.35) * 0.76
+        : 0.88 + ((fall - 0.62) / 0.38) * 0.12;
     float spread = aSeed * 2.0 - 1.0;
-    float neck = smoothstep(0.18, 0.42, drop) * (1.0 - smoothstep(0.58, 0.80, drop));
+    float neck = smoothstep(0.14, 0.38, drop) * (1.0 - smoothstep(0.60, 0.82, drop));
     vec3 sandPos = uMarkCentre + vec3(
-      spread * mix(0.24, 0.03, neck),
-      0.54 - drop * 1.08,
-      (fract(aSeed * 17.0) - 0.5) * 0.05
-    ) * uMarkScale;
+      spread * mix(0.28, 0.025, neck),
+      0.50 - drop * 1.00,
+      (fract(aSeed * 17.0) - 0.5) * 0.04
+    ) * uMarkScale * uGlassScale;
     float sandMix = uSand * isSand;
     bodyPos = mix(bodyPos, sandPos, sandMix);
 
@@ -243,7 +248,7 @@ const VERTEX = /* glsl */ `
 
     // Fine and even along a strand, so consecutive particles overlap into a
     // line instead of reading as separate dots.
-    float sizeScale = mix(1.0, 0.9, uFire) * mix(1.0, 0.68, sandMix);
+    float sizeScale = mix(1.0, 0.9, uFire) * mix(1.0, 0.82, sandMix);
     float size = uSize * (0.75 + aSeed * 0.5) * sizeScale;
     gl_PointSize = size * uPixelRatio * (34.0 / max(-mvPosition.z, 0.001));
 
@@ -254,6 +259,7 @@ const VERTEX = /* glsl */ `
     // Leading particles run brighter, which gives the body a visible direction.
     vHead = aBodyU;
     vStrand = aStrand;
+    vSand = sandMix;
     vDepthFade = 1.0 - smoothstep(26.0, 72.0, -mvPosition.z);
   }
 `
@@ -277,6 +283,7 @@ const FRAGMENT = /* glsl */ `
   varying float vSpeed;
   varying float vHead;
   varying float vStrand;
+  varying float vSand;
 
   void main() {
     vec2 offset = gl_PointCoord - vec2(0.5);
@@ -290,6 +297,7 @@ const FRAGMENT = /* glsl */ `
     float alpha = pow(core, 2.1);
 
     vec3 markColor = mix(uBoneColor, uChalkColor, smoothstep(0.4, 1.0, vSeed));
+    markColor = mix(markColor, uChalkColor, vSand);
     // The head of the body runs hotter while it is travelling, so the direction
     // of motion is legible.
     markColor = mix(markColor, uFlameColor, smoothstep(0.55, 1.0, vHead) * uSpeed * 0.5);
@@ -407,6 +415,7 @@ export function LogoParticles({
       uPixelRatio: { value: 1 },
       uVelocity: { value: 0 },
       uSand: { value: 0 },
+      uGlassScale: { value: paths[0]?.glassScale ?? 1 },
       uOpacity: { value: opacity },
       // Infrared: silver body, blown-white highlights, no warmth anywhere.
       uBoneColor: { value: new THREE.Color('#aab4c2') },

@@ -29,18 +29,18 @@ export const PHASE = {
 
 /** Seconds spent in each leg of one full journey. */
 export const SNAKE = {
-  /** Resting as the logo, so it is unmistakably read as the mark. */
-  markDwell: 3.0,
-  /** Travelling from the mark round to the figure-eight. */
-  travelOut: 3.8,
-  /** Resting as the figure-eight. */
-  shapeDwell: 1.4,
-  /** Travelling from the figure-eight on to the hourglass. */
-  travelGlass: 3.2,
-  /** Resting as the hourglass while sand falls through the waist. */
-  glassDwell: 2.6,
-  /** Travelling the rest of the loop, back to the mark. */
-  travelBack: 3.8,
+  /** Hold the logo so it is read as the mark before the tail leaves. */
+  markDwell: 3.6,
+  /** Tail travels — each part of the line follows the one ahead. */
+  travelOut: 4.0,
+  /** Brief rest as the first form. */
+  shapeDwell: 1.2,
+  /** Onward to the hourglass. */
+  travelGlass: 3.0,
+  /** Stop here: hourglass, sand falling down. */
+  glassDwell: 3.4,
+  /** Come back and stop on the mark again. */
+  travelBack: 4.0,
 } as const
 
 export const SNAKE_CYCLE =
@@ -70,7 +70,7 @@ function sandAt(cycleTime: number): number {
 }
 
 /** Particles trail a little as the body accelerates. */
-export const ARC_LAG = 0.55
+export const ARC_LAG = 0.72
 
 export function formationAt(elapsed: number): number {
   const t = Math.max(0, elapsed)
