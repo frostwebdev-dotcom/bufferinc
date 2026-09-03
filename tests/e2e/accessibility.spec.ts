@@ -102,13 +102,23 @@ test.describe('responsive layout', () => {
       await page.setViewportSize({ width: size.width, height: size.height })
       await page.goto('/')
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
-      await page.waitForTimeout(600)
 
-      const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      )
-      // A pixel of tolerance for sub-pixel rounding.
-      expect(overflow).toBeLessThanOrEqual(1)
+      // Polled rather than sampled once after a fixed wait. Absence of
+      // horizontal overflow is a steady state, but the page reaches it a
+      // little later on a loaded machine — the canvas mounts and the loader
+      // clears on their own schedule. A single timed read tests how busy the
+      // machine is as much as it tests the layout; this waits for the layout
+      // to settle and still fails on genuine persistent overflow.
+      await expect
+        .poll(
+          async () =>
+            page.evaluate(
+              () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+            ),
+          { timeout: 12_000 },
+        )
+        // A pixel of tolerance for sub-pixel rounding.
+        .toBeLessThanOrEqual(1)
     })
   }
 

@@ -152,19 +152,50 @@ const VERTEX = /* glsl */ `
     pos += curl * sin(f * PI) * (0.8 + aSeed * 1.6) * (1.0 - uFire);
 
     /* --- Gathering into the orb ----------------------------------------- */
+    /*
+     * A SHELL, not a filled ball.
+     *
+     * Filling the volume puts every particle's sprite on top of every other
+     * one through the centre, and additive blending clips that to flat white —
+     * so the orb had no internal structure to see, and no change to its colour
+     * or falloff could survive the saturation. Concentrating the particles into
+     * a thin skin leaves the middle comparatively clear, which is what lets it
+     * read as a sphere with a defined edge rather than as a bright smear.
+     *
+     * A quarter of them ride an equatorial ring instead, which gives the thing
+     * an axis and makes it read as an engineered light rather than a blob.
+     */
     float phi = acos(clamp(2.0 * aBodyU - 1.0, -1.0, 1.0));
     float theta = aSeed * TAU + uTime * (0.7 + aSeed * 1.1);
-    float r = 0.10 + pow(aSeed, 2.2) * 0.62;
-    vec3 orbPos = uSparkPos + vec3(
-      sin(phi) * cos(theta) * r,
-      cos(phi) * r + sin(uTime * 1.7 + aSeed * TAU) * 0.06,
-      sin(phi) * sin(theta) * r
+
+    float isRing = step(0.58, aSeed) * step(aSeed, 0.82);
+
+    // Skin of the sphere: tight radius, small scatter.
+    float shell = 0.52 + (fract(aSeed * 37.0) - 0.5) * 0.09;
+    vec3 spherePos = vec3(
+      sin(phi) * cos(theta) * shell,
+      cos(phi) * shell,
+      sin(phi) * sin(theta) * shell
     );
+
+    // Equatorial ring: wider, flattened, turning on its own.
+    float ringAngle = aSeed * TAU * 9.0 + uTime * 1.15;
+    float ringR = 0.90 + (fract(aSeed * 91.0) - 0.5) * 0.06;
+    vec3 ringPos = vec3(
+      cos(ringAngle) * ringR,
+      (fract(aSeed * 53.0) - 0.5) * 0.07,
+      sin(ringAngle) * ringR * 0.42
+    );
+
+    vec3 orbPos = uSparkPos + mix(spherePos, ringPos, isRing);
+
+    // Only a whisper of churn: heavy turbulence here would fill the middle
+    // back in and undo the shell.
     orbPos += vec3(
       sin(uTime * 1.9 + aSeed * 9.1),
       cos(uTime * 1.5 + aSeed * 6.4),
       sin(uTime * 2.3 + aSeed * 3.7)
-    ) * 0.05;
+    ) * 0.022;
 
     // Motion stretch: the orb elongates along its own direction of travel and
     // pinches across it, which is what makes a moving light read as moving
@@ -247,7 +278,7 @@ const FRAGMENT = /* glsl */ `
     // Strands alternate slightly in brightness, which is what stops a dense
     // bundle reading as one flat mass and gives it the grain of combed hair.
     float strandTone = 0.72 + 0.28 * fract(sin(vStrand * 12.9898) * 43758.5453);
-    float brightness = mix(0.95 * strandTone, 0.5 + vSpeed * 0.35, vFire);
+    float brightness = mix(0.95 * strandTone, 0.34 + vSpeed * 0.25, vFire);
 
     gl_FragColor = vec4(color, alpha * vDepthFade * brightness * uOpacity);
   }

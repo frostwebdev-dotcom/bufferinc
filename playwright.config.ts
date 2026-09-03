@@ -24,7 +24,17 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  /*
+   * Capped rather than left at Playwright's default of half the cores.
+   *
+   * Every page under test renders a WebGL scene with tens of thousands of
+   * particles. Eight of those in parallel contend for one GPU, frame timing
+   * becomes unpredictable, and timing-sensitive assertions fail for machine
+   * load rather than for anything about the site — a different test each run.
+   * The suite does not test concurrency, so there is nothing to buy by
+   * saturating the GPU.
+   */
+  workers: process.env.CI ? 1 : 3,
   reporter: process.env.CI ? 'github' : 'list',
   timeout: 60_000,
   expect: { timeout: 10_000 },

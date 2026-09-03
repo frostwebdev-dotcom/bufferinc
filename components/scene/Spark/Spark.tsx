@@ -51,6 +51,7 @@ export function Spark({
   const ringRef = useRef<THREE.Mesh>(null)
   const orbitRef = useRef<THREE.Group>(null)
   const orbGlowRef = useRef<THREE.Mesh>(null)
+  const streakRef = useRef<THREE.Mesh>(null)
 
   const { camera, size } = useThree()
   const curve = useMemo(() => createSparkCurve(flatten), [flatten])
@@ -192,13 +193,63 @@ export function Spark({
           varying vec2 vUv;
           void main() {
             float d = length(vUv - vec2(0.5)) * 2.0;
-            float body = pow(max(1.0 - d, 0.0), 2.0);
-            float centre = pow(max(1.0 - d, 0.0), 7.0);
-            gl_FragColor = vec4(uColor, (body * 0.5 + centre * 0.85) * uIntensity);
+
+            // Three parts, and the RIM is the one that matters. A pure radial
+            // falloff reads as a glow; a glow with a defined boundary reads as
+            // an object that is glowing. Without the rim this is a smear.
+            float core = smoothstep(0.30, 0.20, d);
+            float rim  = smoothstep(0.26, 0.33, d) * smoothstep(0.46, 0.33, d);
+            float halo = pow(max(1.0 - d, 0.0), 2.6);
+
+            float a = core * 0.55 + rim * 0.5 + halo * 0.34;
+            gl_FragColor = vec4(uColor, a * uIntensity);
           }
         `,
       }),
     [orbUniforms],
+  )
+
+  /**
+   * Anamorphic streak — the horizontal flare a bright point throws through a
+   * lens. It is the single cheapest cue that something is a light source
+   * rather than a bright shape, because nothing in nature makes it: the
+   * viewer reads "this was photographed" and infers the brightness.
+   */
+  const streakUniforms = useMemo(
+    () => ({ uColor: { value: new THREE.Color('#eaf4ff') }, uIntensity: { value: 0 } }),
+    [],
+  )
+
+  const streakMaterial = useMemo(
+    () =>
+      new THREE.ShaderMaterial({
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        uniforms: streakUniforms,
+        vertexShader: /* glsl */ `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: /* glsl */ `
+          precision mediump float;
+          uniform vec3 uColor;
+          uniform float uIntensity;
+          varying vec2 vUv;
+          void main() {
+            float x = abs(vUv.x - 0.5) * 2.0;
+            float y = abs(vUv.y - 0.5) * 2.0;
+            // Wide and very thin: a long horizontal falloff against a steep
+            // vertical one.
+            float streak = pow(max(1.0 - x, 0.0), 2.2) * pow(max(1.0 - y, 0.0), 16.0);
+            gl_FragColor = vec4(uColor, streak * uIntensity);
+          }
+        `,
+      }),
+    [streakUniforms],
   )
 
   const ringMaterial = useMemo(
@@ -230,9 +281,10 @@ export function Spark({
       trailMaterial.dispose()
       haloMaterial.dispose()
       orbMaterial.dispose()
+      streakMaterial.dispose()
       ringMaterial.dispose()
     },
-    [trailGeometry, trailMaterial, haloMaterial, orbMaterial, ringMaterial],
+    [trailGeometry, trailMaterial, haloMaterial, orbMaterial, streakMaterial, ringMaterial],
   )
 
   /**
@@ -339,6 +391,17 @@ export function Spark({
       orbUniforms.uIntensity.value = 0.85 * emerge * flicker
     }
 
+    if (streakRef.current) {
+      streakRef.current.quaternion.copy(camera.quaternion)
+      // Widens as it travels, the way a flare smears with exposure.
+      streakRef.current.scale.set(
+        Math.max((9 + signal.velocity * 7) * emerge, 0.001),
+        Math.max(1.5 * emerge, 0.001),
+        1,
+      )
+      streakUniforms.uIntensity.value = 0.34 * emerge * flicker
+    }
+
     /* --- Buffer dots ---------------------------------------------------- */
 
     if (orbitRef.current) {
@@ -438,7 +501,12 @@ export function Spark({
           <meshBasicMaterial color="#ffffff" toneMapped={false} />
         </mesh>
 
-        {/* The orb's soft body — only present once it has gathered */}
+        {/* Lens streak, behind the body so the body reads on top of it */}
+        <mesh ref={streakRef} material={streakMaterial}>
+          <planeGeometry args={[1, 1]} />
+        </mesh>
+
+        {/* The orb's body — only present once it has gathered */}
         <mesh ref={orbGlowRef} material={orbMaterial}>
           <planeGeometry args={[1, 1]} />
         </mesh>

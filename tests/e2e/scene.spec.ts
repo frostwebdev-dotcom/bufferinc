@@ -49,11 +49,20 @@ test.describe('WebGL scene', () => {
     const first = await canvas.screenshot()
     expect(first.byteLength).toBeGreaterThan(20_000)
 
-    // And it must still be moving a second later, with no scrolling involved:
-    // the streams flow on their own.
-    await page.waitForTimeout(1500)
-    const second = await canvas.screenshot()
-    expect(second.equals(first)).toBe(false)
+    // And it must still be moving, with no scrolling involved — the body flows
+    // on its own. Polled rather than compared against a single later frame:
+    // under load the renderer can legitimately miss a frame between two fixed
+    // sample points, which would fail for machine load rather than for a
+    // stalled scene.
+    await expect
+      .poll(
+        async () => {
+          const later = await canvas.screenshot()
+          return later.equals(first) ? 'identical' : 'changed'
+        },
+        { timeout: 10_000 },
+      )
+      .toBe('changed')
   })
 
   test('the canvas can never intercept a click or reach assistive tech', async ({ page }) => {
