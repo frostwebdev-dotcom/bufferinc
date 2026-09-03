@@ -8,19 +8,17 @@ import { getSparkPosition, setSparkIntensity } from '@/lib/spark-position'
 import { useExperience } from '@/lib/store'
 import { damp } from '@/lib/utils'
 import { buildSnakePaths, sampleBody } from '../snakePath'
-import { ARC_LAG, FIRE_THRESHOLD, formationAt, snakeHead } from '../sequence'
+import { ARC_LAG, FIRE_THRESHOLD, RIPPLE_LAG_S, formationAt, snakeHead } from '../sequence'
 
 /**
  * The hero body.
  *
  *   1. Particles arrive from all across the viewport and gather into the body.
- *   2. The body — fixed length, fixed shape — TRAVELS along a closed path. Where
- *      the path traces the mark, the body is the mark. Where it traces the
- *      figure-eight, the body is the figure-eight. Where it traces the
- *      hourglass, the body is the hourglass, and a share of particles leave
- *      the outline to fall through the waist like sand. In between it is draped
- *      across the corner: head already round the bend, tail still on the old
- *      stretch, every part turning as it reaches the same point in space.
+ *   2. The body stretches into the hourglass outline. The head leads; the tail
+ *      is still where the head was a moment ago, so the line ripples through
+ *      the bend instead of sliding as a stamp. Then, over a few seconds, it
+ *      gathers back into the full logo. A share of particles fall through the
+ *      hourglass waist while the body rests there.
  *   3. On scroll the body gathers into a glowing orb that rides the scroll.
  *
  * ---------------------------------------------------------------------------
@@ -44,7 +42,8 @@ const VERTEX = /* glsl */ `
   uniform sampler2D uPath;
   uniform float uSamples;     // samples per path row
   uniform float uRows;
-  uniform vec2  uHead;        // head position per row, already wrapped to 0..1
+  uniform vec2  uHead;        // head now, unwrapped — pathAt fract() wraps
+  uniform vec2  uHeadLag;     // head from a moment ago — the tail still lives here
   uniform vec2  uBodyLen;     // body length per row, as a fraction of the loop
 
   uniform float uTime;
@@ -114,12 +113,16 @@ const VERTEX = /* glsl */ `
 
   void main() {
     float row = aPath;
-    float head = row < 0.5 ? uHead.x : uHead.y;
     float bodyLen = row < 0.5 ? uBodyLen.x : uBodyLen.y;
 
     /* --- Where this particle sits on the path -------------------------- */
-    // A fixed station behind the head. The body's shape is carried, not rebuilt.
-    float station = head - (1.0 - aBodyU) * bodyLen;
+    // The head leads. The tail is still on where the head was a moment ago,
+    // so the line ripples through a corner instead of sliding as a stamp.
+    float headNow = row < 0.5 ? uHead.x : uHead.y;
+    float headThen = row < 0.5 ? uHeadLag.x : uHeadLag.y;
+    float wave = pow(1.0 - aBodyU, 1.35);
+    float delayedHead = mix(headNow, headThen, wave);
+    float station = delayedHead - (1.0 - aBodyU) * bodyLen;
 
     vec3 centre = pathAt(station, row);
 
@@ -134,18 +137,22 @@ const VERTEX = /* glsl */ `
 
     vec3 bodyPos = centre + normal * aCross + binormal * aDepth;
 
+    // A traveling wave down the body — strongest while moving, almost still
+    // at rest. This is the "alive" part: muscle, not a rigid ribbon.
+    float slither = sin(aBodyU * 8.0 - uTime * 2.6 + aStrand * 0.21) * uSpeed;
+    bodyPos += normal * slither * 0.014;
+
     // Particle life: the body breathes, and shears very slightly as it
     // accelerates, so it reads as a swarm holding a shape rather than a decal.
-    float shimmer = 0.006 + uSpeed * 0.02;
+    float shimmer = 0.005 + uSpeed * 0.016;
     bodyPos += vec3(
       sin(uTime * 1.7 + aSeed * TAU),
       cos(uTime * 1.4 + aSeed * 5.1),
       sin(uTime * 2.1 + aSeed * 2.6)
     ) * shimmer;
 
-    // Trailing: the line is a tail. Each station lags the one ahead of it,
-    // so the body does not translate as a rigid stamp — it follows through.
-    bodyPos -= tangent * uSpeed * (1.0 - aBodyU) * ${ARC_LAG.toFixed(3)} * 0.085;
+    // Extra follow-through at the tail while the head is moving.
+    bodyPos -= tangent * uSpeed * (1.0 - aBodyU) * ${ARC_LAG.toFixed(3)} * 0.07;
 
     bodyPos = uMarkCentre + bodyPos * uMarkScale;
 
@@ -155,7 +162,7 @@ const VERTEX = /* glsl */ `
     // Positions are in the authored hourglass frame, then scaled to the path
     // so the stream sits inside the vessel rather than beside it.
     // The accent stroke stays on the outline so the silhouette still reads.
-    float isSand = step(0.52, aSeed) * step(row, 0.5);
+    float isSand = step(0.64, aSeed) * step(row, 0.5);
     float fall = fract(uTime * 0.26 + aSeed * 4.2);
     float drop = fall < 0.30
       ? (fall / 0.30) * 0.12
@@ -399,6 +406,7 @@ export function LogoParticles({
       uSamples: { value: PATH_SAMPLES },
       uRows: { value: paths.length },
       uHead: { value: new THREE.Vector2() },
+      uHeadLag: { value: new THREE.Vector2() },
       uBodyLen: {
         value: new THREE.Vector2(paths[0]?.bodyLength ?? 0.3, paths[1]?.bodyLength ?? 0.3),
       },
@@ -468,17 +476,25 @@ export function LogoParticles({
     rt.fire = damp(rt.fire, wantsFire ? 1 : 0, wantsFire ? 3.2 : 2.2, delta)
 
     const head = uniforms.uHead.value
+    const headLag = uniforms.uHeadLag.value
     let speed = 0
 
     paths.forEach((path, row) => {
       const state = snakeHead(rt.elapsed, path.markHead, path.shapeHead, path.glassHead)
-      const wrapped = ((state.head % 1) + 1) % 1
+      const behind = snakeHead(
+        Math.max(0, rt.elapsed - RIPPLE_LAG_S),
+        path.markHead,
+        path.shapeHead,
+        path.glassHead,
+      )
       if (row === 0) {
-        head.x = wrapped
+        head.x = state.head
+        headLag.x = behind.head
         speed = state.speed
         uniforms.uSand.value = state.sand
       } else {
-        head.y = wrapped
+        head.y = state.head
+        headLag.y = behind.head
       }
     })
 

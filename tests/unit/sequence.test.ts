@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   formationAt,
   snakeHead,
+  flowOut,
+  gatherIn,
   PHASE,
   SNAKE,
   SNAKE_CYCLE,
   ARC_LAG,
+  RIPPLE_LAG_S,
 } from '@/components/scene/sequence'
 import { buildSnakePaths, sampleBody } from '@/components/scene/snakePath'
 import { STROKES } from '@/components/scene/logoShape'
@@ -163,6 +166,38 @@ describe('ARC_LAG', () => {
   it('trails the body without tearing it apart', () => {
     expect(ARC_LAG).toBeGreaterThan(0.2)
     expect(ARC_LAG).toBeLessThan(0.9)
+  })
+})
+
+describe('the living eases', () => {
+  it('starts and ends on the rails', () => {
+    expect(flowOut(0)).toBeCloseTo(0, 8)
+    expect(flowOut(1)).toBeCloseTo(1, 8)
+    expect(gatherIn(0)).toBeCloseTo(0, 8)
+    expect(gatherIn(1)).toBeCloseTo(1, 8)
+  })
+
+  it('only ever moves forward', () => {
+    let prevFlow = -1
+    let prevGather = -1
+    for (let k = 0; k <= 1; k += 0.02) {
+      const f = flowOut(k)
+      const g = gatherIn(k)
+      expect(f).toBeGreaterThanOrEqual(prevFlow)
+      expect(g).toBeGreaterThanOrEqual(prevGather)
+      prevFlow = f
+      prevGather = g
+    }
+  })
+
+  it('the stretch commits earlier than the gather', () => {
+    // Head leaves first; the pull-back spends longer on the glass.
+    expect(flowOut(0.45)).toBeGreaterThan(gatherIn(0.45))
+  })
+
+  it('keeps the tail a fraction of a second behind the head', () => {
+    expect(RIPPLE_LAG_S).toBeGreaterThan(0.25)
+    expect(RIPPLE_LAG_S).toBeLessThan(0.9)
   })
 })
 

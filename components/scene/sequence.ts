@@ -3,20 +3,13 @@ import { clamp, smoothstep } from '@/lib/utils'
 /**
  * Timing for the hero.
  *
- * Two independent tracks:
+ * The logo is a living line, not two poses cross-faded:
  *
- *   formation  0 → 1, once. Particles arrive from all across the viewport and
- *              gather into the body.
+ *   formation  particles gather into the mark
+ *   stretch    the head leads into the hourglass outline; the tail ripples after
+ *   gather     over a few seconds the line pulls back into the full logo
  *
- *   head       the position of the snake's head along its loop. The body of
- *              fixed length trails behind it. The head DWELLS where the body
- *              covers the mark, travels to the figure-eight, dwells, travels
- *              on to the hourglass (where sand falls through the waist),
- *              dwells, and continues back to the mark.
- *
- * The body is never reshaped. Only the head's position on the path changes, and
- * the body follows it — which is why the motion reads as one thing turning a
- * corner rather than as two poses being cross-faded.
+ * Stops are breaths, not cuts. The tail is always a little behind the head.
  */
 
 /** Seconds, measured from the moment the loading overlay clears. */
@@ -29,18 +22,18 @@ export const PHASE = {
 
 /** Seconds spent in each leg of one full journey. */
 export const SNAKE = {
-  /** Hold the logo so it is read as the mark before the tail leaves. */
-  markDwell: 3.6,
-  /** Tail travels — each part of the line follows the one ahead. */
-  travelOut: 4.0,
-  /** Brief rest as the first form. */
-  shapeDwell: 1.2,
-  /** Onward to the hourglass. */
-  travelGlass: 3.0,
-  /** Stop here: hourglass, sand falling down. */
-  glassDwell: 3.4,
-  /** Come back and stop on the mark again. */
-  travelBack: 4.0,
+  /** Hold the logo long enough to read, then the head leaves. */
+  markDwell: 2.8,
+  /** Stretch toward the hourglass. The figure-eight is only a curve on the way. */
+  travelOut: 5.2,
+  /** A breath, not a hold — the line does not snap onto the mid-form. */
+  shapeDwell: 0.4,
+  /** Finish the stretch onto the hourglass outline. */
+  travelGlass: 2.2,
+  /** Rest as the glass while sand runs. Short, so it does not feel parked. */
+  glassDwell: 2.0,
+  /** A few seconds: particles pull back together into the full logo. */
+  travelBack: 5.6,
 } as const
 
 export const SNAKE_CYCLE =
@@ -69,8 +62,31 @@ function sandAt(cycleTime: number): number {
   return 1
 }
 
-/** Particles trail a little as the body accelerates. */
-export const ARC_LAG = 0.72
+/** How far the tail lags the head, in seconds. The ripple. */
+export const RIPPLE_LAG_S = 0.55
+
+/** Extra follow-through along the tangent while the head is moving. */
+export const ARC_LAG = 0.78
+
+/**
+ * Stretch: the head commits to the curve a little early, then settles.
+ * Not a symmetric ease — that reads as a tween.
+ */
+export function flowOut(k: number): number {
+  const t = clamp(k, 0, 1)
+  const s = t * t * (3 - 2 * t)
+  return s * (2 - s)
+}
+
+/**
+ * Gather: linger on the glass, then pull back. Most of the travel
+ * happens in the second half, over a few seconds.
+ */
+export function gatherIn(k: number): number {
+  const t = clamp(k, 0, 1)
+  const s = t * t * (3 - 2 * t)
+  return s * s
+}
 
 export function formationAt(elapsed: number): number {
   const t = Math.max(0, elapsed)
@@ -121,7 +137,7 @@ export function snakeHead(
 
   if (c < shapeStart) {
     const k = (c - outStart) / SNAKE.travelOut
-    return { head: markHead + toShape * smoothstep(k), speed: Math.sin(k * Math.PI), sand }
+    return { head: markHead + toShape * flowOut(k), speed: Math.sin(k * Math.PI), sand }
   }
 
   if (c < toGlassStart) {
@@ -131,7 +147,7 @@ export function snakeHead(
   if (c < glassStart) {
     const k = (c - toGlassStart) / SNAKE.travelGlass
     return {
-      head: markHead + toShape + toGlass * smoothstep(k),
+      head: markHead + toShape + toGlass * flowOut(k),
       speed: Math.sin(k * Math.PI),
       sand,
     }
@@ -143,7 +159,7 @@ export function snakeHead(
 
   const k = (c - backStart) / SNAKE.travelBack
   return {
-    head: markHead + toShape + toGlass + toMark * smoothstep(k),
+    head: markHead + toShape + toGlass + toMark * gatherIn(k),
     speed: Math.sin(k * Math.PI),
     sand,
   }
