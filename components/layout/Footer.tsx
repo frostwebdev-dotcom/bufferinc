@@ -15,8 +15,11 @@ import { PlaceholderMark } from '@/components/ui/PlaceholderMark'
 export function Footer() {
   const year = new Date().getFullYear()
 
+  // z-10 puts the footer on the same content plane as <main>. Without it the
+  // footer sits below the fixed atmosphere layers — scrim, vignette, grain —
+  // which paint straight over it and crush it to black.
   return (
-    <footer className="relative border-t border-[color:var(--hairline)]">
+    <footer className="relative z-10 border-t border-[color:var(--hairline)]">
       {/* Final transition — the world opens into light. */}
       <div className="relative overflow-hidden border-b border-[color:var(--hairline)]">
         <div

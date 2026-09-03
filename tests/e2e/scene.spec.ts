@@ -173,6 +173,45 @@ test.describe('fireball', () => {
   })
 })
 
+test.describe('stacking', () => {
+  test('every content region sits above the atmosphere layers', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+
+    // The atmosphere is a set of fixed, full-viewport overlays. Anything that
+    // holds text has to be painted above all of them. The footer lives outside
+    // <main>, so it does not inherit that plane automatically — it sat below
+    // the scrim, vignette and grain, and they crushed it to black once the
+    // vignette was made heavier.
+    const layers = await page.evaluate(() => {
+      const z = (sel: string) => {
+        const el = document.querySelector(sel)
+        if (!el) return null
+        const value = getComputedStyle(el).zIndex
+        return value === 'auto' ? null : Number(value)
+      }
+      return {
+        main: z('main'),
+        footer: z('footer'),
+        scrim: z('.atmos-scrim'),
+        haze: z('.atmos-haze'),
+        vignette: z('.atmos-vignette'),
+        grain: z('.atmos-grain'),
+      }
+    })
+
+    const atmosphere = [layers.scrim, layers.haze, layers.vignette, layers.grain]
+    for (const layer of atmosphere) expect(layer).not.toBeNull()
+
+    const highestAtmosphere = Math.max(...(atmosphere as number[]))
+    expect(layers.main).not.toBeNull()
+    expect(layers.footer).not.toBeNull()
+    expect(layers.main as number).toBeGreaterThan(highestAtmosphere)
+    expect(layers.footer as number).toBeGreaterThan(highestAtmosphere)
+  })
+
+})
+
 test.describe('reduced motion', () => {
   test.use({ contextOptions: { reducedMotion: 'reduce' } })
 
