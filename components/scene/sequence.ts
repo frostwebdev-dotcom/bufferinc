@@ -22,18 +22,18 @@ export const PHASE = {
 
 /** Seconds spent in each leg of one full journey. */
 export const SNAKE = {
-  /** Hold the logo long enough to read, then the head leaves. */
-  markDwell: 2.8,
-  /** Stretch toward the hourglass. The figure-eight is only a curve on the way. */
-  travelOut: 5.2,
-  /** A breath, not a hold — the line does not snap onto the mid-form. */
-  shapeDwell: 0.4,
-  /** Finish the stretch onto the hourglass outline. */
-  travelGlass: 2.2,
-  /** Rest as the glass while sand runs. Short, so it does not feel parked. */
-  glassDwell: 2.0,
-  /** A few seconds: particles pull back together into the full logo. */
-  travelBack: 5.6,
+  /** The spiral mark, then the tail leaves. */
+  markDwell: 2.2,
+  /** Tail ripples into the two-loop form they drew. */
+  travelOut: 4.4,
+  /** Hold the figure-eight — that is the form they pointed at as the logo. */
+  shapeDwell: 2.8,
+  /** Stretch into the hourglass. */
+  travelGlass: 2.8,
+  /** Rest as the glass while sand falls through the neck. */
+  glassDwell: 2.8,
+  /** Pull back into the mark, over a few seconds. */
+  travelBack: 5.2,
 } as const
 
 export const SNAKE_CYCLE =

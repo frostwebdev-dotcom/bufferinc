@@ -162,18 +162,19 @@ const VERTEX = /* glsl */ `
     // Positions are in the authored hourglass frame, then scaled to the path
     // so the stream sits inside the vessel rather than beside it.
     // The accent stroke stays on the outline so the silhouette still reads.
-    float isSand = step(0.64, aSeed) * step(row, 0.5);
-    float fall = fract(uTime * 0.26 + aSeed * 4.2);
-    float drop = fall < 0.30
-      ? (fall / 0.30) * 0.12
-      : fall < 0.62
-        ? 0.12 + pow((fall - 0.30) / 0.32, 1.35) * 0.76
-        : 0.88 + ((fall - 0.62) / 0.38) * 0.12;
+    float isSand = step(0.58, aSeed) * step(row, 0.5);
+    float fall = fract(uTime * 0.24 + aSeed * 4.2);
+    float drop = fall < 0.28
+      ? (fall / 0.28) * 0.14
+      : fall < 0.64
+        ? 0.14 + pow((fall - 0.28) / 0.36, 1.45) * 0.72
+        : 0.86 + ((fall - 0.64) / 0.36) * 0.14;
     float spread = aSeed * 2.0 - 1.0;
-    float neck = smoothstep(0.14, 0.38, drop) * (1.0 - smoothstep(0.60, 0.82, drop));
+    float neck = smoothstep(0.16, 0.40, drop) * (1.0 - smoothstep(0.58, 0.80, drop));
+    // Funnel in from the bulb walls, then straight down the neck.
     vec3 sandPos = uMarkCentre + vec3(
-      spread * mix(0.28, 0.025, neck),
-      0.50 - drop * 1.00,
+      spread * mix(0.22, 0.02, neck),
+      0.46 - drop * 0.92,
       (fract(aSeed * 17.0) - 0.5) * 0.04
     ) * uMarkScale * uGlassScale;
     float sandMix = uSand * isSand;

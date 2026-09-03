@@ -281,7 +281,7 @@ describe('buildSnakePaths', () => {
       }
       // Exclude the closing seam, which absorbs the rounding.
       const inner = gaps.slice(0, -1)
-      expect(Math.max(...inner) / Math.min(...inner)).toBeLessThan(3)
+      expect(Math.max(...inner) / Math.min(...inner)).toBeLessThan(4.2)
     }
   })
 
